@@ -1,3 +1,5 @@
+<div dir="rtl" lang="ar" style="direction: rtl; text-align: right;">
+
 # CyberDev — قائمة أعضاء الفريق ومشاركاتهم
 
 | # | الاسم | حساب GitHub  | ملاحظات |
@@ -7,3 +9,8 @@
 | 3 | حافظ | @hafedibrahim16-hue | |
 | 4 | عثمان | @othmancoc | |
 | 5 | وزير عبدالقوي | @wazeercs | |
+
+<!-- CONTRIBUTORS_START -->
+<!-- CONTRIBUTORS_END -->
+
+</div>
