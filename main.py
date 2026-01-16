@@ -1,5 +1,10 @@
 import os
 from utils.util import is_valid_url
+from utils.util import logo
+
+logo()
+
+
 
 url = input("Enter URL: ")
 
