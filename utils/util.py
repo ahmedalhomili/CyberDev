@@ -1,3 +1,14 @@
+import sys
+
+
+def chack_os():
+    if sys.platform.startswith("win"):
+        return "windows"
+    elif sys.platform.startswith("linux"):
+        return "linux"
+    return "Unknown"
+
+
 def is_valid_url(url: str) -> bool:
     if not isinstance(url, str):
         return False
@@ -14,17 +25,3 @@ def is_valid_url(url: str) -> bool:
         return False
 
     return True
-
-
-def logo():
-    print("""
-   ██████╗ ██╗   ██╗██████╗ ███████╗██████╗     ██████╗ ███████╗██╗   ██╗
-  ██╔════╝ ╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗   ██╔═══██╗██╔════╝██║   ██║
-  ██║       ╚████╔╝ ██████╔╝█████╗  ██████╔╝   ██║   ██║█████╗  ██║   ██║
-  ██║        ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗   ██║   ██║██╔══╝  ╚██╗ ██╔╝
-  ╚██████╗    ██║   ██████╔╝███████╗██║  ██║██╗╚██████╔╝███████╗ ╚████╔╝ 
-   ╚═════╝    ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚══════╝  ╚═══╝  
-
-              Safe Web Vulnerability Checker
-                    Passive • Ethical 
-    """)
