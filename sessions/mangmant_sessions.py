@@ -54,9 +54,7 @@ def create_session():
     url = input(f"{BLUE} Enter URL OR 00-Back {GREEN}>> {RESET}")
 
     if url == "00":
-        from utils.allMenus import sessionMenu
-        sessionMenu()
-        return
+        return False
 
     if not is_valid_url(url):
         print(f"{RED}[✗] Invalid URL format{RESET}")
@@ -79,6 +77,7 @@ def create_session():
 
     print(f"{GREEN}[✓] Session created successfully{RESET}")
     time.sleep(1.5)
+    return True
 
 
 def get_session():
