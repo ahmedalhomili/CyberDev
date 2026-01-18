@@ -20,8 +20,8 @@
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-repo/SWVC.git
-    cd SWVC
+    git clone https://github.com/ahmedalhomili/CyberDev.git
+    cd CyberDev
     ```
 
 2.  **Install dependencies:**
@@ -117,4 +117,3 @@ python main.py show SWVC-20240118-123045-example-a1b2c3d4
 | 2 | Bazil Adel | @bazilb402-dot | HTTP & Network |
 | 3 | Othman | @othmancoc | Security Headers |
 | 4 | Wazeer Abdulqawi | @wazeercs | CORS & Reporting |
-| - | Hafed (Removed) | - | - |

@@ -8,6 +8,7 @@ from utils.util import clear_screen, is_valid_url
 from sessions.session_logger import SessionLogger
 from scanner.scanner_orchestrator import SecurityScanner
 from report.report_formatter import ReportFormatter
+from utils.progress import ProgressBar
 
 # Initialize core components
 session_logger = SessionLogger()
@@ -67,11 +68,18 @@ def start_new_scan_flow():
         return
 
     print(f"\n{GREEN}[*] Initializing scan for: {url}{RESET}")
-    print(f"{GREEN}[*] Please wait...{RESET}")
     
+    # Progress Bar Callback
+    def progress_handler(step, total, msg):
+        bar = ProgressBar(total, prefix='Scanning', length=40)
+        bar.update(step, msg)
+
     try:
         # Run the full scan using the orchestrator
-        scan_result = scanner.scan(url, verbose=False)
+        scan_result = scanner.scan(url, verbose=False, progress_callback=progress_handler)
+        
+        # Brief pause to show 100% completion
+        time.sleep(0.5)
         
         # Display the report
         formatter = ReportFormatter(scan_result)
