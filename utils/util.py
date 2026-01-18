@@ -1,4 +1,16 @@
+import os
 import sys
+
+from utils.logo import logo
+
+
+def clear_screen():
+    os_name = chack_os()
+    if os_name == "windows":
+        os.system("cls")
+    elif os_name == "linux":
+        os.system("clear")
+    logo(animated=True)
 
 
 def chack_os():

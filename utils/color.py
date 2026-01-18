@@ -54,12 +54,12 @@ COLOR_SCHEMES = [
 # ─────────── Severity Symbols ───────────
 HIGH = f"{RED}🔴 HIGH{RESET}"
 MEDIUM = f"{YELLOW}🟠 MEDIUM{RESET}"
-LOW = f"{GREEN}🟢 LOW{RESET}"
-
-print(f"{HIGH} Missing Content-Security-Policy header")
-print(f"{MEDIUM} Missing X-Frame-Options header")
-print(f"{LOW} HTTPS redirect OK")
-print(f"{BLUE}Scanning Target URL: https://example.com{RESET}")
-print(f"{MAGENTA}Debug: Header fetched successfully{RESET}")
-print(f"{CYAN}Info: CORS wildcard detected{RESET}")
-print(f"{GRAY}Minor: Optional recommendation{RESET}")
+# LOW = f"{GREEN}🟢 LOW{RESET}"
+#
+# print(f"{HIGH} Missing Content-Security-Policy header")
+# print(f"{MEDIUM} Missing X-Frame-Options header")
+# print(f"{LOW} HTTPS redirect OK")
+# print(f"{BLUE}Scanning Target URL: https://example.com{RESET}")
+# print(f"{MAGENTA}Debug: Header fetched successfully{RESET}")
+# print(f"{CYAN}Info: CORS wildcard detected{RESET}")
+# print(f"{GRAY}Minor: Optional recommendation{RESET}")
