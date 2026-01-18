@@ -86,6 +86,7 @@ python main.py show SWVC-20240118-123045-example-a1b2c3d4
 *   **`main.py`**: Entry point for both CLI and interactive modes.
 *   **`cli.py`**: Handles command-line argument parsing.
 *   **`config.py`**: Configuration constants (Severity levels, Header rules).
+*   **`models.py`**: Data structures (`Finding`, `ScanResult`).
 *   **`scanner/`**:
     *   `scanner_orchestrator.py`: Coordinates the scanning process.
     *   `http_handler.py`: Handles network requests and HTTPS checks.
@@ -94,8 +95,12 @@ python main.py show SWVC-20240118-123045-example-a1b2c3d4
 *   **`sessions/`**:
     *   `session_logger.py`: Manages saving/loading scan history (JSON).
 *   **`report/`**:
-    *   `report_formatter.py`: Generates CLI, JSON, and Markdown reports.
-*   **`models.py`**: Data structures (`Finding`, `ScanResult`).
+    *   `report_formatter.py`: Generates CLI, HTML, JSON, CSV, and Markdown reports.
+*   **`utils/`**:
+    *   `allMenus.py`: Interactive menu interface.
+    *   `progress.py`: Visual progress bar for scans.
+    *   `color.py`: ANSI color codes for terminal output.
+    *   `util.py`: General utility functions.
 
 ---
 
