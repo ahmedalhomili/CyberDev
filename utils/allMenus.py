@@ -4,6 +4,7 @@ Interactive Menu Handling using new Architecture.
 import time
 import sys
 from utils.color import RED, GREEN, BLUE, RESET, YELLOW, CYAN, MAGENTA
+from utils.domain2Ip import domain2ip
 from utils.util import clear_screen, is_valid_url
 from sessions.session_logger import SessionLogger
 from scanner.scanner_orchestrator import SecurityScanner
@@ -56,7 +57,7 @@ def start_new_scan_flow():
     print(f"{MAGENTA}Type '0' to return to main menu.{RESET}\n")
     
     url = input(f"{BLUE}Target URL >> {RESET}").strip()
-    
+
     if url == '0':
         mainMenu()
         return
@@ -66,6 +67,9 @@ def start_new_scan_flow():
         time.sleep(2)
         start_new_scan_flow()
         return
+
+    print(f"{CYAN}[INFO]{RESET} {GREEN}Resolved IP address for the given domain:{RESET} {domain2ip(url)}")
+
 
     print(f"\n{GREEN}[*] Initializing scan for: {url}{RESET}")
     
