@@ -109,6 +109,7 @@ class ReportFormatter:
         summary = self.result.summary()
         output.append(f"{BLUE}[ 📊 SUMMARY OF FINDINGS ]{RESET}")
         output.append(f"{BLUE}{'─'*26}{RESET}")
+        output.append(f"  {RED}� CRITICAL: {summary['critical']}{RESET}")
         output.append(f"  {RED}🔴 HIGH    : {summary['high']}{RESET}")
         output.append(f"  {YELLOW}🟠 MEDIUM  : {summary['medium']}{RESET}")
         output.append(f"  {GREEN}🟢 LOW     : {summary['low']}{RESET}")
@@ -123,10 +124,17 @@ class ReportFormatter:
             
             findings_by_severity = self._group_findings_by_severity()
             
-            for severity in ['HIGH', 'MEDIUM', 'LOW']:
+            for severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']:
                 findings = findings_by_severity.get(severity, [])
                 if findings:
-                    color = RED if severity == "HIGH" else YELLOW if severity == "MEDIUM" else GREEN
+                    if severity == "CRITICAL":
+                        color = RED # You could verify a bold or blink code if you had one, but RED is fine
+                    elif severity == "HIGH":
+                        color = RED
+                    elif severity == "MEDIUM":
+                        color = YELLOW
+                    else:
+                        color = GREEN
                     
                     for finding in findings:
                         output.append(f"\n{color}{severity} | {finding.title}{RESET}")
