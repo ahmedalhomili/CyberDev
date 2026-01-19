@@ -8,11 +8,11 @@ from urllib3.util.retry import Retry
 from urllib.parse import urlparse
 from typing import Dict, List, Optional
 import logging
+from fake_useragent import UserAgent
 
 class HTTPAnalyzer:
     """Handles HTTP requests and protocol analysis."""
     
-    DEFAULT_USER_AGENT = 'Safe-Web-Vulnerability-Checker/1.0 (+http://example.com)'
     TIMEOUT = 10
     
     def __init__(self, verify_ssl: bool = True, timeout: int = TIMEOUT):
@@ -26,6 +26,10 @@ class HTTPAnalyzer:
         self.session = requests.Session()
         self.verify_ssl = verify_ssl
         self.timeout = timeout
+        try:
+            self.ua = UserAgent()
+        except:
+            self.ua = None
         self._setup_session()
     
     def _setup_session(self):
@@ -38,8 +42,26 @@ class HTTPAnalyzer:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount('http://', adapter)
         self.session.mount('https://', adapter)
-        self.session.headers.update({'User-Agent': self.DEFAULT_USER_AGENT})
+        
+        # Randomize UA if possible, else default
+        ua_string = self.ua.random if self.ua else 'Safe-Web-Vulnerability-Checker/1.0'
+        self.session.headers.update({'User-Agent': ua_string})
     
+    def fetch_page_content(self, url: str) -> Dict:
+        """Fetch full page content for analysis."""
+        if not url.startswith(('http://', 'https://')):
+            url = f'http://{url}'
+        
+        try:
+            response = self.session.get(url, timeout=self.timeout, verify=self.verify_ssl)
+            return {
+                'success': True,
+                'content': response.text,
+                'status_code': response.status_code
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
     def fetch_headers(self, url: str) -> Dict:
         """
         Fetch HTTP headers from target URL.
