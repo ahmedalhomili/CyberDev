@@ -71,65 +71,104 @@ def start_new_scan_flow():
     print(f"{CYAN}[INFO]{RESET} {GREEN}Resolved IP address for the given domain:{RESET} {domain2ip(url)}")
 
 
-    print(f"\n{GREEN}[*] Initializing scan for: {url}{RESET}")
+    print(f"\n{GREEN}[*] Initializing scan for: {url}{RESET}\n")
     
-    # Progress Bar Callback
+    # Progress Handler
+    progress_state = {'last_msg': None, 'last_step': 0}
+    
     def progress_handler(step, total, msg):
-        bar = ProgressBar(total, prefix='Scanning', length=40)
-        bar.update(step, msg)
+        # Clear current line (Active Progress Bar)
+        sys.stdout.write('\r' + ' ' * 100 + '\r')
+        
+        # If we moved to a new step, mark the previous one as Done
+        if progress_state['last_msg'] and step > progress_state['last_step']:
+            print(f"{GREEN}[✓]{RESET} {progress_state['last_msg']}")
+            
+        # Draw Progress Bar for Current Step
+        percent = 100 * (step / float(total))
+        bar_len = 30
+        filled = int(bar_len * step // total)
+        bar = '█' * filled + '-' * (bar_len - filled)
+        
+        sys.stdout.write(f"{CYAN}[Step {step}/{total}]{RESET} |{GREEN}{bar}{RESET}| {percent:.0f}% {msg}")
+        sys.stdout.flush()
+        
+        progress_state['last_msg'] = msg
+        progress_state['last_step'] = step
 
     try:
         # Run the full scan using the orchestrator
         scan_result = scanner.scan(url, verbose=False, progress_callback=progress_handler)
         
-        # Brief pause to show 100% completion
+        # Finalize the last step
+        sys.stdout.write('\r' + ' ' * 100 + '\r')
+        if progress_state['last_msg']:
+             print(f"{GREEN}[✓]{RESET} {progress_state['last_msg']}")
+        
+        # Brief pause
         time.sleep(0.5)
         
-        # Display the report
+        print(f"\n{GREEN}[✓] Scan Finished Successfully!{RESET}")
+        print(f"{CYAN}Session ID: {scan_result.session_id}{RESET}")
+        
         formatter = ReportFormatter(scan_result)
-        clear_screen()
-        print(formatter.format_cli_output())
         
-        print(f"\n{GREEN}[✓] Scan saved successfully! Session ID: {scan_result.session_id}{RESET}")
-        
-        # Ask for report export
-        print(f"\n{CYAN}Do you want to export the report?{RESET}")
-        print(f"{GREEN}[1] JSON  [2] Markdown  [3] HTML  [4] CSV  [0] Skip{RESET}")
-        
-        export_choice = input(f"{BLUE}Select formats (e.g. 1,3) >> {RESET}").strip()
-        
-        if export_choice and export_choice != '0':
-            choices = export_choice.replace(',', ' ').split()
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            base_name = f"report_{timestamp}"
+        while True:
+            print(f"\n{YELLOW}Select an action:{RESET}")
+            print(f"{GREEN}[1] View Full Report (On Screen){RESET}")
+            print(f"{GREEN}[2] Export Report (JSON, HTML, MD, CSV){RESET}")
+            print(f"{RED}[0] Return to Main Menu{RESET}")
             
-            for c in choices:
-                if c == '1':
-                    fname = f"{base_name}.json"
-                    with open(fname, 'w', encoding='utf-8') as f:
-                        f.write(formatter.format_json())
-                    print(f"{GREEN}Saved: {fname}{RESET}")
-                elif c == '2':
-                    fname = f"{base_name}.md"
-                    with open(fname, 'w', encoding='utf-8') as f:
-                        f.write(formatter.format_markdown())
-                    print(f"{GREEN}Saved: {fname}{RESET}")
-                elif c == '3':
-                    fname = f"{base_name}.html"
-                    with open(fname, 'w', encoding='utf-8') as f:
-                        f.write(formatter.format_html())
-                    print(f"{GREEN}Saved: {fname}{RESET}")
-                elif c == '4':
-                    fname = f"{base_name}.csv"
-                    with open(fname, 'w', encoding='utf-8') as f:
-                        f.write(formatter.format_csv())
-                    print(f"{GREEN}Saved: {fname}{RESET}")
+            sub = input(f"\n{BLUE}Option >> {RESET}").strip()
+            
+            if sub == '1':
+                clear_screen()
+                print(formatter.format_cli_output())
+                print(f"\n{YELLOW}(End of Report){RESET}")
+                # Don't return, loop back to allow export after viewing
+            
+            elif sub == '2':
+                print(f"\n{CYAN}Select formats to export:{RESET}")
+                print(f"{GREEN}[1] JSON  [2] Markdown  [3] HTML  [4] CSV{RESET}")
+                export_choice = input(f"{BLUE}Formats (e.g. 1,3) >> {RESET}").strip()
+                
+                if export_choice:
+                    choices = export_choice.replace(',', ' ').split()
+                    timestamp = time.strftime("%Y%m%d_%H%M%S")
+                    base_name = f"report_{timestamp}"
+                    
+                    for c in choices:
+                        if c == '1':
+                            with open(f"{base_name}.json", 'w', encoding='utf-8') as f:
+                                f.write(formatter.format_json())
+                            print(f"{GREEN}Saved: {base_name}.json{RESET}")
+                        elif c == '2':
+                            with open(f"{base_name}.md", 'w', encoding='utf-8') as f:
+                                f.write(formatter.format_markdown())
+                            print(f"{GREEN}Saved: {base_name}.md{RESET}")
+                        elif c == '3':
+                            with open(f"{base_name}.html", 'w', encoding='utf-8') as f:
+                                f.write(formatter.format_html())
+                            print(f"{GREEN}Saved: {base_name}.html{RESET}")
+                        elif c == '4':
+                            with open(f"{base_name}.csv", 'w', encoding='utf-8') as f:
+                                f.write(formatter.format_csv())
+                            print(f"{GREEN}Saved: {base_name}.csv{RESET}")
+                    print(f"\n{GREEN}Export complete!{RESET}")
+            
+            elif sub == '0':
+                mainMenu()
+                return
+            else:
+                print(f"{RED}Invalid option!{RESET}")
 
     except Exception as e:
         print(f"\n{RED}[!] Scan failed: {str(e)}{RESET}")
+        input(f"\n{BLUE}Press Enter to return to menu...{RESET}")
+        mainMenu()
     
-    input(f"\n{BLUE}Press Enter to return to menu...{RESET}")
-    mainMenu()
+    # input(f"\n{BLUE}Press Enter to return to menu...{RESET}") # Handled in loop
+    # mainMenu()
 
 def history_menu():
     clear_screen()
