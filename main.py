@@ -9,6 +9,7 @@ from scanner.scanner_orchestrator import SecurityScanner
 from sessions.session_logger import SessionLogger
 from report.report_formatter import ReportFormatter
 from utils.allMenus import mainMenu
+from utils.color import RED, YELLOW, GREEN, RESET, BRIGHT_RED
 
 # Configure logging
 logging.basicConfig(
@@ -17,8 +18,40 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def ethical_compliance_check():
+    """
+    Displays a mandatory ethical disclaimer and requires user acknowledgement.
+    """
+    print(f"\n{BRIGHT_RED}[!] Mandatory Ethical Compliance Implementation [!]{RESET}")
+    print(f"{YELLOW}This tool is designed for educational purposes and authorized security testing ONLY.{RESET}")
+    print(f"{RED}Unauthorized scanning of targets you do not own or have explicit written permission to test is ILLEGAL.{RESET}")
+    print(f"{YELLOW}The developers assume no liability and are not responsible for any misuse or damage caused by this program.{RESET}")
+    
+    print(f"\n{GREEN}By proceeding, you confirm that:{RESET}")
+    print("1. You have fully read and understood this disclaimer.")
+    print("2. You have explicit authorization to scan the target.")
+    print("3. You agree to use this tool responsibly and ethically.")
+    
+    while True:
+        try:
+            choice = input(f"\n{BRIGHT_RED}Do you agree to these terms? (yes/no): {RESET}").lower().strip()
+            if choice in ['yes', 'y']:
+                print(f"{GREEN}[+] Access Granted. Proceeding ethically...{RESET}\n")
+                break
+            elif choice in ['no', 'n']:
+                print(f"{RED}[-] Access Denied. Exiting...{RESET}")
+                sys.exit(1)
+            else:
+                print("Please answer 'yes' or 'no'.")
+        except KeyboardInterrupt:
+            print(f"\n{RED}[-] Operation cancelled by user.{RESET}")
+            sys.exit(1)
+
 def main():
     """Main application entry point."""
+    # Ensure ethical use before anything else
+    ethical_compliance_check()
+
     try:
         # Check if arguments are provided, otherwise launch interactive menu
         if len(sys.argv) == 1:
