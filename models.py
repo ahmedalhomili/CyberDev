@@ -3,7 +3,21 @@ Data models for scan results and findings.
 """
 from dataclasses import dataclass, asdict, field
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
+
+@dataclass
+class ReconData:
+    """Stores reconnaissance information."""
+    ip_address: Optional[str] = None
+    domain_info: Optional[Dict[str, Any]] = None  # Whois simple data
+    server_os: Optional[str] = None
+    technologies: List[str] = field(default_factory=list)
+    open_ports: List[int] = field(default_factory=list)
+    dns_security: Optional[Dict[str, Any]] = None # SPF, DMARC info
+    subdomains: List[str] = field(default_factory=list) # Passive subdomains
+    
+    def to_dict(self):
+        return asdict(self)
 
 @dataclass
 class Finding:
@@ -27,6 +41,7 @@ class ScanResult:
     findings: List[Finding]
     https_enabled: bool
     redirect_chain: List[str]
+    recon: Optional[ReconData] = None
     
     def summary(self):
         """Return statistics about findings."""
@@ -46,5 +61,6 @@ class ScanResult:
             'findings': [f.to_dict() for f in self.findings],
             'https_enabled': self.https_enabled,
             'redirect_chain': self.redirect_chain,
+            'recon': self.recon.to_dict() if self.recon else None,
             'summary': self.summary()
         }
