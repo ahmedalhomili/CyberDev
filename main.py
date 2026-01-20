@@ -11,9 +11,12 @@ from report.report_formatter import ReportFormatter
 from utils.allMenus import mainMenu
 
 # Configure logging
+# Redirect logs to a file to prevent interfering with the CLI progress bar
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='scanner_debug.log',
+    filemode='a'
 )
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,9 @@ def main():
             # Execute scan
             scanner = SecurityScanner(session_logger)
             try:
-                result = scanner.scan(args.url, args.verbose)
+                # Default to level 4 (all) if not specified via CLI (though CLI default handles it)
+                lvl = getattr(args, 'level', '4')
+                result = scanner.scan(args.url, args.verbose, level=lvl)
                 
                 # Display CLI output
                 formatter = ReportFormatter(result)
