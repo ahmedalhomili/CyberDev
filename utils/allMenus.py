@@ -17,10 +17,10 @@ scanner = SecurityScanner(session_logger)
 
 def mainMenu():
     clear_screen()
-    print(f"{CYAN}╔═══════════════════════════════════════════╗{RESET}")
-    print(f"{CYAN}║    {GREEN}Safe Web Vulnerability Checker{CYAN}         ║{RESET}")
-    print(f"{CYAN}║        {YELLOW}(Passive Analysis Tool){CYAN}            ║{RESET}")
-    print(f"{CYAN}╚═══════════════════════════════════════════╝{RESET}")
+    print(f"{CYAN}╔═════════════════════════════════════════════╗{RESET}")
+    print(f"{CYAN}║ {GREEN}SWVC v1.0 - Safe Web Vulnerability Checker{CYAN}  ║{RESET}")
+    print(f"{CYAN}║           {YELLOW}(Hybrid Passive/Active){CYAN}           ║{RESET}")
+    print(f"{CYAN}╚═════════════════════════════════════════════╝{RESET}")
     
     menuOp = [
         f'{GREEN}[1] Start New Scan{RESET}',
@@ -52,7 +52,7 @@ def mainMenu():
 
 def start_new_scan_flow():
     clear_screen()
-    print(f"{CYAN}=== Start New Passive Scan ==={RESET}\n")
+    print(f"{CYAN}=== Start New Scan ==={RESET}\n")
     print(f"{YELLOW}Enter target URL (e.g., https://example.com){RESET}")
     print(f"{MAGENTA}Type '0' to return to main menu.{RESET}\n")
     
@@ -88,9 +88,9 @@ def start_new_scan_flow():
         percent = 100 * (step / float(total))
         bar_len = 30
         filled = int(bar_len * step // total)
-        bar = '█' * filled + '-' * (bar_len - filled)
+        bar = '█' * filled + '░' * (bar_len - filled)
         
-        sys.stdout.write(f"{CYAN}[Step {step}/{total}]{RESET} |{GREEN}{bar}{RESET}| {percent:.0f}% {msg}")
+        sys.stdout.write(f"{CYAN}[Step {step:02d}/{total}]{RESET} [{GREEN}{bar}{RESET}] {percent:3.0f}% {msg}")
         sys.stdout.flush()
         
         progress_state['last_msg'] = msg
@@ -98,7 +98,9 @@ def start_new_scan_flow():
 
     try:
         # Run the full scan using the orchestrator
+        start_time = time.time()
         scan_result = scanner.scan(url, verbose=False, progress_callback=progress_handler)
+        end_time = time.time()
         
         # Finalize the last step
         sys.stdout.write('\r' + ' ' * 100 + '\r')
@@ -109,6 +111,23 @@ def start_new_scan_flow():
         time.sleep(0.5)
         
         print(f"\n{GREEN}[✓] Scan Finished Successfully!{RESET}")
+        
+        # Executive Summary
+        duration_sec = end_time - start_time
+        mins, secs = divmod(int(duration_sec), 60)
+        duration_str = f"{mins:02d}:{secs:02d}"
+        
+        summary = scan_result.summary()
+        
+        print(f"\n{CYAN}════════════ Scan Summary ════════════{RESET}")
+        print(f"Target        : {scan_result.target_url}")
+        print(f"Critical      : {RED}{summary.get('critical', 0)}{RESET}")
+        print(f"High          : {RED}{summary['high']}{RESET}")
+        print(f"Medium        : {YELLOW}{summary['medium']}{RESET}")
+        print(f"Low           : {CYAN}{summary['low']}{RESET}")
+        print(f"Scan Duration : {duration_str}")
+        print(f"{CYAN}══════════════════════════════════════{RESET}")
+        
         print(f"{CYAN}Session ID: {scan_result.session_id}{RESET}")
         
         formatter = ReportFormatter(scan_result)

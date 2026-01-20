@@ -109,10 +109,10 @@ class ReportFormatter:
         summary = self.result.summary()
         output.append(f"{BLUE}[ 📊 SUMMARY OF FINDINGS ]{RESET}")
         output.append(f"{BLUE}{'─'*26}{RESET}")
-        output.append(f"  {RED}� CRITICAL: {summary['critical']}{RESET}")
+        output.append(f"  {RED}🔴 CRITICAL: {summary.get('critical', 0)}{RESET}")
         output.append(f"  {RED}🔴 HIGH    : {summary['high']}{RESET}")
         output.append(f"  {YELLOW}🟠 MEDIUM  : {summary['medium']}{RESET}")
-        output.append(f"  {GREEN}🟢 LOW     : {summary['low']}{RESET}")
+        output.append(f"  {CYAN}🔵 LOW     : {summary['low']}{RESET}")
         output.append(f"  {BLUE}{'-'*12}{RESET}")
         output.append(f"  {BLUE}📊 TOTAL   : {summary['total']}{RESET}")
         output.append("")
@@ -134,10 +134,11 @@ class ReportFormatter:
                     elif severity == "MEDIUM":
                         color = YELLOW
                     else:
-                        color = GREEN
+                        # LOW or Info -> Cyan/Blue
+                        color = CYAN
                     
                     for finding in findings:
-                        output.append(f"\n{color}{severity} | {finding.title}{RESET}")
+                        output.append(f"\n{color}[{severity}] {finding.title}{RESET}")
                         output.append(f"{color}{'-'*78}{RESET}")
                         output.append(f"   {label_val('Location', finding.location)}")
                         output.append(f"   {label_val('Description', finding.description)}")
@@ -463,8 +464,14 @@ class ReportFormatter:
 
     def _group_findings_by_severity(self) -> dict:
         """Group findings by severity level."""
-        grouped = {'HIGH': [], 'MEDIUM': [], 'LOW': []}
+        grouped = {'CRITICAL': [], 'HIGH': [], 'MEDIUM': [], 'LOW': []}
         for finding in self.result.findings:
-            if finding.severity in grouped:
-                grouped[finding.severity].append(finding)
+            # Normalize severity to uppercase
+            sev = finding.severity.upper() 
+            if sev in grouped:
+                grouped[sev].append(finding)
+            else:
+                # Fallback for unexpected severity strings
+                if 'INFO' in sev: grouped['LOW'].append(finding)
+                else: grouped['MEDIUM'].append(finding)
         return grouped
