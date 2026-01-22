@@ -4,12 +4,12 @@ Manages scan history and session data storage.
 """
 import json
 import os
-from datetime import datetime
 import uuid
-import time
+from datetime import datetime
 from typing import List, Dict, Optional, Union
+
 from models import ScanResult
-import logging
+
 
 # Ensure we can import from parent if needed, though relative imports are preferred within packages.
 # For simplicity in this structure, we'll assume proper path setup.
