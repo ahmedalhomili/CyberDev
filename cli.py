@@ -3,8 +3,7 @@ Command-line interface for Safe Web Vulnerability Checker.
 Handles argument parsing and user interaction.
 """
 import argparse
-import sys
-import os
+
 
 def parse_arguments():
     """
