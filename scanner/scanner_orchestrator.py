@@ -22,6 +22,11 @@ from scanner.vuln_jwt import JWTScanner
 from scanner.vuln_graphql import GraphQLScanner
 from scanner.vuln_deserialization import DeserializationScanner
 from scanner.vuln_cache_poisoning import CachePoisoningScanner
+from scanner.vuln_auth_workflow import AuthScanner
+from scanner.vuln_upload_checks import FileUploadScanner
+from scanner.vuln_xxe import XXEScanner
+from scanner.vuln_api_security import APISecurityScanner
+from scanner.vuln_websocket import WebSocketScanner
 from scanner.explore_fuzzer import DirectoryFuzzer
 from models import Finding, ScanResult
 from sessions.session_logger import SessionLogger
@@ -59,6 +64,13 @@ class SecurityScanner:
         self.deserialization_scanner = DeserializationScanner()
         self.cache_poisoning_scanner = CachePoisoningScanner()
         
+        # New High-Impact Scanners
+        self.auth_scanner = AuthScanner()
+        self.upload_scanner = FileUploadScanner()
+        self.xxe_scanner = XXEScanner()
+        self.api_scanner = APISecurityScanner()
+        self.websocket_scanner = WebSocketScanner()
+        
         self.dir_fuzzer = DirectoryFuzzer()
         
         self.session_logger = session_logger
@@ -75,7 +87,11 @@ class SecurityScanner:
         Returns:
             ScanResult object with all findings
         """
-        steps_total = 19
+        # Initialize Session
+        session_id = self.session_logger.generate_session_id(url)
+        start_time = self.session_logger.get_timestamp()
+
+        steps_total = 21
         
         if verbose:
             print(f"Starting scan for: {url}")
@@ -91,6 +107,7 @@ class SecurityScanner:
             raise Exception(f"Unable to reach {url}: {headers_response.get('error')}")
         
         headers = headers_response['headers']
+        response_obj = headers_response.get('response_object') # Expecting full response object here if possible, or we need to pass it
         redirect_chain = headers_response.get('redirect_history', [])
         
         # Enhance recon with findings from headers
@@ -176,30 +193,38 @@ class SecurityScanner:
         active_findings.extend(self.graphql_scanner.scan(url))
         active_findings.extend(self.deserialization_scanner.scan(url))
 
-        # Step 18: Cache Poisoning
-        if progress_callback: progress_callback(18, steps_total, "Checking Web Cache Configuration...")
-        active_findings.extend(self.cache_poisoning_scanner.scan(url))
+        # Step 18: Authentication & Session Management
+        if progress_callback: progress_callback(18, steps_total, "Checking Authentication & Session Security...")
+        if response_obj:
+            active_findings.extend(self.auth_scanner.scan(url, response_obj))
 
-        # Final Aggregation
+        # Step 19: File Upload & XXE
+        if progress_callback: progress_callback(19, steps_total, "Analyzing File Upload & XXE Risks...")
+        if response_obj:
+            active_findings.extend(self.upload_scanner.scan(url, response_obj.text))
+            active_findings.extend(self.xxe_scanner.check_response_for_xxe_potential(response_obj))
+
+        # Step 20: API & WebSocket Security
+        if progress_callback: progress_callback(20, steps_total, "Inspecting API Endpoints & WebSockets...")
+        active_findings.extend(self.api_scanner.scan(url))
+        active_findings.extend(self.websocket_scanner.scan(url))
+
+        # Step 21: Cache Poisoning checks
+        if progress_callback: progress_callback(21, steps_total, "Analyzing Web Cache Poisoning Risks...")
+        active_findings.extend(self.cache_poisoning_scanner.check_cache_headers(headers, url))
+
+        # Final Compilation        
         all_findings = header_findings + cors_findings + content_findings + robots_findings + fuzzer_findings + active_findings
-        
-        if progress_callback: progress_callback(19, steps_total, "Finalizing & Logging...")
 
-        # Create scan result
         scan_result = ScanResult(
-            session_id=self.session_logger.generate_session_id(url),
+            session_id=session_id,
             target_url=url,
-            timestamp=self.session_logger.get_timestamp(),
+            timestamp=start_time,
             findings=all_findings,
             https_enabled=https_enforced,
             redirect_chain=redirect_chain,
             recon=recon_data
         )
         
-        # Step 7: Log session
         self.session_logger.save_session(scan_result)
-        
-        if verbose:
-            print(f"Scan complete for {url}: {len(all_findings)} findings")
-            
         return scan_result
