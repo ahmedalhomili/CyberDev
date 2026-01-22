@@ -1,15 +1,15 @@
 """
 Interactive Menu Handling using new Architecture.
 """
-import time
 import sys
+import time
+
+from report.report_formatter import ReportFormatter
+from scanner.scanner_orchestrator import SecurityScanner
+from sessions.session_logger import SessionLogger
 from utils.color import RED, GREEN, BLUE, RESET, YELLOW, CYAN, MAGENTA
 from utils.domain2Ip import domain2ip
 from utils.util import clear_screen, is_valid_url
-from sessions.session_logger import SessionLogger
-from scanner.scanner_orchestrator import SecurityScanner
-from report.report_formatter import ReportFormatter
-from utils.progress import ProgressBar
 
 # Initialize core components
 session_logger = SessionLogger()
