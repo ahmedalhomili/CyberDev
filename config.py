@@ -32,9 +32,11 @@ SECURITY_HEADERS = {
 
 # Severity Levels
 SEVERITY_LEVELS = {
+    'CRITICAL': {'symbol': '🔴', 'color': 'red', 'priority': 0},
     'HIGH': {'symbol': '🔴', 'color': 'red', 'priority': 1},
     'MEDIUM': {'symbol': '🟠', 'color': 'yellow', 'priority': 2},
-    'LOW': {'symbol': '🟢', 'color': 'green', 'priority': 3}
+    'LOW': {'symbol': '🟢', 'color': 'green', 'priority': 3},
+    'INFO': {'symbol': '🔵', 'color': 'blue', 'priority': 4}
 }
 
 # Logging Configuration
