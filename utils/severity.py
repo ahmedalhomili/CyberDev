@@ -5,9 +5,11 @@ Centralized severity handling for scan results.
 """
 
 SEVERITY_LEVELS = {
-    "Low": 1,
-    "Medium": 2,
-    "High": 3
+    "INFO": 0,
+    "LOW": 1,
+    "MEDIUM": 2,
+    "HIGH": 3,
+    "CRITICAL": 4
 }
 
 
@@ -16,11 +18,22 @@ def normalize_severity(severity: str) -> str:
     Ensure severity value is valid.
 
     Returns:
-        str: Low | Medium | High
+        str: INFO | LOW | MEDIUM | HIGH | CRITICAL
     """
-    if severity not in SEVERITY_LEVELS:
-        return "Low"
-    return severity
+    s = severity.upper()
+    if s in SEVERITY_LEVELS:
+        return s
+    
+    # Simple mapping for mixed case inputs
+    mapping = {
+        "INFO": "INFO", "INFORMATION": "INFO",
+        "LOW": "LOW",
+        "MEDIUM": "MEDIUM", "MED": "MEDIUM",
+        "HIGH": "HIGH",
+        "CRITICAL": "CRITICAL", "CRIT": "CRITICAL"
+    }
+    
+    return mapping.get(s, "LOW")
 
 
 def compare_severity(current: str, new: str) -> str:
