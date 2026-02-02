@@ -18,6 +18,21 @@ class ReconData:
     
     def to_dict(self):
         return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ReconData':
+        """Create ReconData from dictionary."""
+        if not data:
+            return None
+        return cls(
+            ip_address=data.get('ip_address'),
+            domain_info=data.get('domain_info'),
+            server_os=data.get('server_os'),
+            technologies=data.get('technologies', []),
+            open_ports=data.get('open_ports', []),
+            dns_security=data.get('dns_security'),
+            subdomains=data.get('subdomains', [])
+        )
 
 @dataclass
 class Finding:
@@ -32,6 +47,19 @@ class Finding:
     
     def to_dict(self):
         return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Finding':
+        """Create Finding from dictionary."""
+        return cls(
+            title=data['title'],
+            severity=data['severity'],
+            description=data['description'],
+            location=data['location'],
+            recommendation=data['recommendation'],
+            cwe_reference=data.get('cwe_reference'),
+            confidence=data.get('confidence', 'High')
+        )
 
 @dataclass
 class ScanResult:
@@ -67,3 +95,21 @@ class ScanResult:
             'recon': self.recon.to_dict() if self.recon else None,
             'summary': self.summary()
         }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ScanResult':
+        """Create ScanResult from dictionary."""
+        timestamp = data['timestamp']
+        if isinstance(timestamp, str):
+            from datetime import datetime
+            timestamp = datetime.fromisoformat(timestamp)
+        
+        return cls(
+            session_id=data['session_id'],
+            target_url=data['target_url'],
+            timestamp=timestamp,
+            findings=[Finding.from_dict(f) for f in data.get('findings', [])],
+            https_enabled=data.get('https_enabled', False),
+            redirect_chain=data.get('redirect_chain', []),
+            recon=ReconData.from_dict(data.get('recon')) if data.get('recon') else None
+        )

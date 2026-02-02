@@ -33,6 +33,7 @@ from sessions.session_logger import SessionLogger
 import logging
 
 from utils.severity import normalize_severity, SEVERITY_LEVELS
+from config import CRAWLER_MAX_DEPTH, CRAWLER_MAX_URLS
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class SecurityScanner:
         self.recon_analyzer = ReconAnalyzer()
         self.content_analyzer = ContentAnalyzer()
         self.robots_analyzer = RobotsAnalyzer(self.http_analyzer)
-        self.link_crawler = LinkCrawler(max_depth=2, max_urls=30)
+        self.link_crawler = LinkCrawler(max_depth=CRAWLER_MAX_DEPTH, max_urls=CRAWLER_MAX_URLS)
         
         # Active Vulnerability Scanners
         self.sqli_scanner = SQLiScanner()

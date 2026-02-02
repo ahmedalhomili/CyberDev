@@ -30,6 +30,9 @@ Examples:
     scan_parser.add_argument('url', help='Target URL to scan')
     scan_parser.add_argument('-v', '--verbose', action='store_true', 
                            help='Enable verbose output')
+    scan_parser.add_argument('-l', '--level', type=str, default='4',
+                           choices=['1', '2', '3', '4'],
+                           help='Scan depth level: 1=basic, 2=medium, 3=advanced, 4=full (default: 4)')
     scan_parser.add_argument('-j', '--json', metavar='FILE',
                            help='Export report as JSON to file')
     scan_parser.add_argument('-m', '--markdown', metavar='FILE',
@@ -47,6 +50,12 @@ Examples:
     # Show command
     show_parser = subparsers.add_parser('show', help='Show detailed scan report')
     show_parser.add_argument('session_id', help='Session ID to display')
+    
+    # Help command (alias for --help)
+    help_parser = subparsers.add_parser('help', help='Show detailed help and usage examples')
+    
+    # Man command (manual/documentation)
+    man_parser = subparsers.add_parser('man', help='Show comprehensive manual and documentation')
 
     # Interactive mode (default if no args)
     # No explicit command needed, logic in main will handle empty args
