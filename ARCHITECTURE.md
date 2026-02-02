@@ -105,10 +105,25 @@ scanner/recon/recon_analyzer.py
 
 #### **المرحلة الثانية: استكشاف الهيكل** 🗺️
 ```
-scanner/recon/link_crawler.py
-├─► زحف الروابط (Crawling)
-├─► استخراج URLs مع parameters
-└─► بناء خريطة للموقع
+scanner/recon/link_crawler.py  ⭐ المكون الأساسي
+├─► زحف الروابط (Web Crawling)
+├─► استخراج URLs من <a> و <form>
+├─► فلترة URLs مع parameters فقط
+│   مثال:
+│   ✅ /page.php?id=1        → يُضاف للفحص
+│   ✅ /search.php?q=test    → يُضاف للفحص
+│   ❌ /about.html           → يُتجاهل (بدون parameters)
+└─► إرجاع قائمة testable URLs
+
+مثال عملي:
+  المدخل: https://example.com
+           ↓
+  Crawler يكتشف:
+  1. https://example.com/products.php?id=1
+  2. https://example.com/search.php?q=test
+  3. https://example.com/page.php?category=5
+           ↓
+  يُمرَّر للمرحلة الثالثة ←
 
 scanner/recon/explore_fuzzer.py
 ├─► البحث عن ملفات حساسة
@@ -117,6 +132,10 @@ scanner/recon/explore_fuzzer.py
 ```
 
 #### **المرحلة الثالثة: فحص الثغرات** 🐛
+```
+لكل URL اكتشفه Crawler:
+
+scanner/vulnerabilities/
 تنفيذ كل فاحص بشكل متسلسل:
 ```
 scanner/vulnerabilities/
@@ -166,7 +185,71 @@ ReportFormatter
 
 ---
 
-### 2. **HTTP Handler** (معالج الطلبات)
+### 2. **Link Crawler** (زاحف الروابط) 🕷️
+**الملف:** `scanner/recon/link_crawler.py`
+
+**الوظيفة:** اكتشاف URLs مع parameters تلقائياً للفحص
+
+**لماذا نحتاجه؟**
+معظم الثغرات (SQLi, XSS, LFI) تحتاج parameters:
+```
+✅ /page.php?id=1        # قابل للفحص
+❌ /about.html           # لا يوجد parameters
+```
+
+**كيف يعمل؟**
+```python
+1. يزحف الموقع من الصفحة الرئيسية
+2. يستخرج روابط من:
+   - <a href="...">
+   - <form action="...">
+3. يفلتر الروابط التي فيها parameters (?param=value)
+4. يزحف حتى عمق 2 مستويات
+5. يرجع قائمة URLs للفحص
+```
+
+**الدوال الرئيسية:**
+- `crawl(url)` - يبدأ الزحف من URL
+- `get_testable_urls()` - يرجع URLs مع parameters فقط
+- `_extract_links()` - يستخرج روابط من HTML
+- `_is_same_domain()` - يتأكد أن الرابط من نفس الموقع
+
+**مثال عملي:**
+```python
+crawler = LinkCrawler(max_depth=2, max_urls=30)
+crawled = crawler.crawl("https://example.com")
+
+# النتيجة:
+[
+    {'url': '/page.php?id=1', 'params': ['id'], 'depth': 1},
+    {'url': '/search.php?q=test', 'params': ['q'], 'depth': 1},
+    {'url': '/products.php?cat=5', 'params': ['cat'], 'depth': 2}
+]
+
+# استخدام في Orchestrator:
+testable_urls = crawler.get_testable_urls(limit=15)
+for url in testable_urls:
+    sqli_scanner.scan(url)  # يفحص كل URL
+```
+
+**الإعدادات:**
+```python
+LinkCrawler(
+    max_depth=2,     # كم مستوى يزحف (default: 2)
+    max_urls=30      # كم صفحة يزور (default: 30)
+)
+```
+
+**ماذا لو لم يجد URLs؟**
+```python
+if not testable_urls:
+    testable_urls = [base_url]  # يستخدم الـ URL الأساسي
+    # لكن معظم الفاحصات لن تجد شيء
+```
+
+---
+
+### 3. **HTTP Handler** (معالج الطلبات)
 **الملف:** `scanner/core/http_handler.py`
 
 **الوظيفة:** إرسال واستقبال طلبات HTTP بأمان
@@ -179,7 +262,7 @@ ReportFormatter
 
 ---
 
-### 3. **Vulnerability Scanners** (فاحصات الثغرات)
+### 4. **Vulnerability Scanners** (فاحصات الثغرات)
 **المجلد:** `scanner/vulnerabilities/`
 
 **الهيكل الموحد لكل فاحص:**
@@ -375,36 +458,99 @@ certifi          # SSL certificates
 ## 📊 مخطط تدفق البيانات
 
 ```
-User Input (URL)
+User Input (URL: https://example.com)
       ↓
    CLI Interface
       ↓
 Scanner Orchestrator
       ↓
-┌─────┴─────────────────────┐
-│                             │
-Reconnaissance            Vulnerability
-   Module                   Scanners
+      ├─────────────────────────┐
       │                         │
-      ├─ Whois                 ├─ SQLi
-      ├─ DNS                   ├─ XSS
-      ├─ Port Scan             ├─ LFI
-      ├─ SSL Info              ├─ RCE
-      ├─ Geolocation           └─ ...
-      └─ Hosting Detection
+  Reconnaissance          🕷️ Link Crawler
+      Module                (NEW!)
       │                         │
-      └──────┬──────────────────┘
-             ↓
+      ├─ Whois                 ↓
+      ├─ DNS               Crawls website
+      ├─ Port Scan              ↓
+      ├─ SSL Info          Discovers:
+      ├─ Geolocation       • /page.php?id=1
+      └─ Hosting           • /search.php?q=test
+      │                    • /products.php?cat=5
+      │                         │
+      └─────────┬───────────────┘
+                ↓
+        testable_urls = [
+            "/page.php?id=1",
+            "/search.php?q=test",
+            "/products.php?cat=5"
+        ]
+                ↓
+        Vulnerability Scanners
+        (Loop through each URL)
+                ↓
+        ┌───────┼───────┐
+        │       │       │
+      SQLi    XSS    LFI
+        │       │       │
+    Test each URL with:
+    - /page.php?id=1' OR '1'='1
+    - /search.php?q=<script>alert(1)</script>
+    - /products.php?cat=../../etc/passwd
+                ↓
       Aggregate Results
-             ↓
+                ↓
        ScanResult Object
-             ↓
+       (findings: List[Finding])
+                ↓
       Report Formatter
-             ↓
-    ┌────────┴────────┐
-    │                 │
-CLI Output      Export Files
-                (JSON/HTML/MD/CSV)
+                ↓
+       ┌────────┴────────┐
+       │                 │
+   CLI Output      Export Files
+   (Colored)      (JSON/HTML/MD/CSV)
+```
+
+### 🔍 مثال تفصيلي: مسار فحص SQLi
+
+```
+1. User: python main.py
+2. Input: https://testphp.vulnweb.com
+         ↓
+3. Link Crawler يزحف:
+   - صفحة رئيسية: https://testphp.vulnweb.com/
+   - يجد: <a href="/artists.php?artist=1">
+   - يجد: <a href="/listproducts.php?cat=1">
+         ↓
+4. testable_urls = [
+       "/artists.php?artist=1",
+       "/listproducts.php?cat=1"
+   ]
+         ↓
+5. SQLi Scanner يفحص:
+   
+   URL 1: /artists.php?artist=1
+   • Payload 1: artist=1' OR '1'='1
+     Response: 200 OK (طول 5000 bytes)
+   • Payload 2: artist=1' OR '1'='2
+     Response: 200 OK (طول 2000 bytes)
+   ✓ أطوال مختلفة → Boolean-based SQLi detected!
+   
+   • Payload 3: artist=1' AND SLEEP(5)--
+     Response: 200 OK (بعد 5.2 ثانية)
+   ✓ تأخير → Time-based SQLi confirmed!
+         ↓
+6. Finding created:
+   {
+     title: "SQL Injection (Boolean-based)",
+     severity: "HIGH",
+     location: "/artists.php?artist=1",
+     ...
+   }
+         ↓
+7. Report Formatter:
+   [HIGH] SQL Injection Detected
+   Location: /artists.php?artist=1
+   Description: Boolean-based blind SQLi
 ```
 
 ---
