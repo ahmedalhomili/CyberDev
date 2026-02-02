@@ -6,7 +6,7 @@ from typing import List
 from models import ScanResult, Finding
 import json
 from config import SEVERITY_LEVELS
-from utils.color import RED, YELLOW, GREEN, CYAN, RESET, BLUE
+from ui.colors import RED, YELLOW, GREEN, CYAN, RESET, BLUE
 
 class ReportFormatter:
     """Formats scan results for various output formats."""
@@ -78,6 +78,60 @@ class ReportFormatter:
                 for tech in recon.technologies:
                     output.append(f"   • {tech}")
                 output.append("")
+            
+            # Geolocation & Hosting (NEW)
+            geo = getattr(recon, '__dict__', {}).get('geolocation', {})
+            if geo and geo.get('country'):
+                output.append(f"{YELLOW}➤ Geolocation & Hosting:{RESET}")
+                if geo.get('country'):
+                    location = f"{geo['city']}, {geo['region']}, {geo['country']}" if geo.get('city') else f"{geo['country']}"
+                    output.append(f"   • {label_val('Location', location)}")
+                if geo.get('isp'):
+                    output.append(f"   • {label_val('ISP', geo['isp'])}")
+                if geo.get('organization'):
+                    output.append(f"   • {label_val('Organization', geo['organization'])}")
+                if geo.get('asn'):
+                    output.append(f"   • {label_val('ASN', f'{geo['asn']} ({geo.get('as_name', 'N/A')})')}")
+                if geo.get('is_hosting'):
+                    output.append(f"   • {label_val('Hosting Type', f'{GREEN}Data Center / Cloud{RESET}')}")
+                output.append("")
+            
+            # Hosting Provider Detection (NEW)
+            hosting = getattr(recon, '__dict__', {}).get('hosting_provider', {})
+            if hosting and hosting.get('provider') != 'Unknown':
+                output.append(f"{YELLOW}➤ Hosting Provider:{RESET}")
+                output.append(f"   • {label_val('Provider', hosting['provider'])}")
+                output.append(f"   • {label_val('Type', hosting['type'])}")
+                if hosting.get('cloud_platform'):
+                    output.append(f"   • {label_val('Cloud Platform', f'{GREEN}{hosting['cloud_platform']}{RESET}')}")
+                output.append("")
+            
+            # CDN & WAF Detection (NEW)
+            cdn_waf = getattr(recon, '__dict__', {}).get('cdn_waf', {})
+            if cdn_waf and (cdn_waf.get('cdn') or cdn_waf.get('waf')):
+                output.append(f"{YELLOW}➤ CDN & Security:{RESET}")
+                if cdn_waf.get('cdn'):
+                    output.append(f"   • {label_val('CDN', f'{GREEN}{cdn_waf['cdn']}{RESET}')}")
+                if cdn_waf.get('waf'):
+                    output.append(f"   • {label_val('WAF', f'{GREEN}{cdn_waf['waf']}{RESET}')}")
+                output.append("")
+            
+            # SSL/TLS Information (NEW)
+            ssl_info = getattr(recon, '__dict__', {}).get('ssl_info', {})
+            if ssl_info and ssl_info.get('enabled'):
+                output.append(f"{YELLOW}➤ SSL/TLS Certificate:{RESET}")
+                output.append(f"   • {label_val('Status', f'{GREEN}✓ Enabled{RESET}')}")
+                if ssl_info.get('version'):
+                    output.append(f"   • {label_val('Protocol', ssl_info['version'])}")
+                if ssl_info.get('cipher'):
+                    output.append(f"   • {label_val('Cipher', ssl_info['cipher'])}")
+                if ssl_info.get('issuer'):
+                    issuer = ssl_info['issuer']
+                    issuer_name = issuer.get('organizationName') or issuer.get('commonName', 'Unknown')
+                    output.append(f"   • {label_val('Issuer', issuer_name)}")
+                if ssl_info.get('not_after'):
+                    output.append(f"   • {label_val('Expires', ssl_info['not_after'])}")
+                output.append("")
 
             # Network Group
             output.append(f"{YELLOW}➤ Network & Security:{RESET}")
@@ -96,13 +150,14 @@ class ReportFormatter:
                 output.append(f"       - DMARC : {dmarc_val}")
             
             output.append("")
-
-            if recon.subdomains:
-                output.append(f"{YELLOW}➤ Subdomains (Top {len(recon.subdomains)}):{RESET}")
-                for sub in recon.subdomains[:5]:
+            
+            # Subdomains Discovery (NEW)
+            if recon.subdomains and len(recon.subdomains) > 0:
+                output.append(f"{YELLOW}➤ Discovered Subdomains ({len(recon.subdomains)}):{RESET}")
+                for sub in recon.subdomains[:10]:
                      output.append(f"   • {sub}")
-                if len(recon.subdomains) > 5:
-                    output.append(f"   • ... and {len(recon.subdomains) - 5} more")
+                if len(recon.subdomains) > 10:
+                    output.append(f"   • {CYAN}... and {len(recon.subdomains) - 10} more{RESET}")
                 output.append("")
 
         # Summary
@@ -113,6 +168,7 @@ class ReportFormatter:
         output.append(f"  {RED}🔴 HIGH    : {summary['high']}{RESET}")
         output.append(f"  {YELLOW}🟠 MEDIUM  : {summary['medium']}{RESET}")
         output.append(f"  {CYAN}🔵 LOW     : {summary['low']}{RESET}")
+        output.append(f"  {GREEN}⚪ INFO    : {summary.get('info', 0)}{RESET}")
         output.append(f"  {BLUE}{'-'*12}{RESET}")
         output.append(f"  {BLUE}📊 TOTAL   : {summary['total']}{RESET}")
         output.append("")
@@ -124,7 +180,7 @@ class ReportFormatter:
             
             findings_by_severity = self._group_findings_by_severity()
             
-            for severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']:
+            for severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']:
                 findings = findings_by_severity.get(severity, [])
                 if findings:
                     if severity == "CRITICAL":
@@ -133,14 +189,17 @@ class ReportFormatter:
                         color = RED
                     elif severity == "MEDIUM":
                         color = YELLOW
-                    else:
-                        # LOW or Info -> Cyan/Blue
+                    elif severity == "LOW":
                         color = CYAN
+                    else:
+                        # INFO
+                        color = GREEN
                     
                     for finding in findings:
                         output.append(f"\n{color}[{severity}] {finding.title}{RESET}")
                         output.append(f"{color}{'-'*78}{RESET}")
                         output.append(f"   {label_val('Location', finding.location)}")
+                        output.append(f"   {label_val('Confidence', finding.confidence)}")
                         output.append(f"   {label_val('Description', finding.description)}")
                         output.append(f"   {label_val('Fix', f'{CYAN}{finding.recommendation}{RESET}')}")
                         if finding.cwe_reference:
@@ -223,11 +282,13 @@ class ReportFormatter:
             md.append(f"\n## Findings\n")
             # Flatten scan result logic needs findings to be objects. 
             # In new architecture they are Finding objects.
+            # Sort findings by severity with safe handling
+            severity_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFO': 4}
             sorted_findings = sorted(self.result.findings, 
-                                 key=lambda f: ['HIGH', 'MEDIUM', 'LOW'].index(f.severity))
+                                 key=lambda f: severity_order.get(f.severity, 99))
             
             for finding in sorted_findings:
-                severity_info = SEVERITY_LEVELS[finding.severity]
+                severity_info = SEVERITY_LEVELS.get(finding.severity, SEVERITY_LEVELS['LOW'])
                 md.append(f"### {severity_info['symbol']} {finding.title}")
                 md.append(f"\n**Severity:** {finding.severity}")
                 md.append(f"\n**Location:** {finding.location}")
@@ -314,7 +375,9 @@ class ReportFormatter:
 
         # Findings HTML
         findings_html = ""
-        sorted_findings = sorted(self.result.findings, key=lambda f: ['HIGH', 'MEDIUM', 'LOW'].index(f.severity))
+        # Sort findings by severity with safe handling
+        severity_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFO': 4}
+        sorted_findings = sorted(self.result.findings, key=lambda f: severity_order.get(f.severity, 99))
         
         for finding in sorted_findings:
             severity_class = finding.severity.lower()
@@ -362,14 +425,14 @@ class ReportFormatter:
                 /* Summary */
                 .summary-stats {{ display: flex; justify-content: space-around; margin: 20px 0; }}
                 .stat-box {{ text-align: center; padding: 15px; border-radius: 8px; min-width: 100px; color: white; }}
-                .stat-high {{ background: #e74c3c; }} .stat-medium {{ background: #f39c12; }} .stat-low {{ background: #27ae60; }} .stat-total {{ background: #7f8c8d; }}
+                .stat-critical {{ background: #8B0000; }} .stat-high {{ background: #e74c3c; }} .stat-medium {{ background: #f39c12; }} .stat-low {{ background: #27ae60; }} .stat-info {{ background: #3498db; }} .stat-total {{ background: #7f8c8d; }}
                 
                 /* Findings */
                 .finding-card {{ border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; background: white; }}
                 .finding-header {{ padding: 10px 20px; color: white; }}
                 .finding-body {{ padding: 20px; }}
-                .high-bg {{ background: #e74c3c; }} .medium-bg {{ background: #f39c12; }} .low-bg {{ background: #27ae60; }}
-                .high-border {{ border-color: #e74c3c; }} .medium-border {{ border-color: #f39c12; }} .low-border {{ border-color: #27ae60; }}
+                .critical-bg {{ background: #8B0000; }} .high-bg {{ background: #e74c3c; }} .medium-bg {{ background: #f39c12; }} .low-bg {{ background: #27ae60; }} .info-bg {{ background: #3498db; }}
+                .critical-border {{ border-color: #8B0000; }} .high-border {{ border-color: #e74c3c; }} .medium-border {{ border-color: #f39c12; }} .low-border {{ border-color: #27ae60; }} .info-border {{ border-color: #3498db; }}
                 
                 /* Utils */
                 .badge {{ padding: 3px 8px; border-radius: 4px; font-size: 0.85em; color: white; }}
@@ -395,6 +458,10 @@ class ReportFormatter:
                 <div class="section">
                     <h2 class="section-title">📊 Executive Summary</h2>
                     <div class="summary-stats">
+                        <div class="stat-box stat-critical">
+                            <h3>{summary['critical']}</h3>
+                            <span>CRITICAL</span>
+                        </div>
                         <div class="stat-box stat-high">
                             <h3>{summary['high']}</h3>
                             <span>HIGH</span>
@@ -406,6 +473,10 @@ class ReportFormatter:
                         <div class="stat-box stat-low">
                             <h3>{summary['low']}</h3>
                             <span>LOW</span>
+                        </div>
+                        <div class="stat-box stat-info">
+                            <h3>{summary['info']}</h3>
+                            <span>INFO</span>
                         </div>
                         <div class="stat-box stat-total">
                             <h3>{summary['total']}</h3>
@@ -464,7 +535,7 @@ class ReportFormatter:
 
     def _group_findings_by_severity(self) -> dict:
         """Group findings by severity level."""
-        grouped = {'CRITICAL': [], 'HIGH': [], 'MEDIUM': [], 'LOW': []}
+        grouped = {'CRITICAL': [], 'HIGH': [], 'MEDIUM': [], 'LOW': [], 'INFO': []}
         for finding in self.result.findings:
             # Normalize severity to uppercase
             sev = finding.severity.upper() 
@@ -472,6 +543,5 @@ class ReportFormatter:
                 grouped[sev].append(finding)
             else:
                 # Fallback for unexpected severity strings
-                if 'INFO' in sev: grouped['LOW'].append(finding)
-                else: grouped['MEDIUM'].append(finding)
+                grouped['LOW'].append(finding)
         return grouped
