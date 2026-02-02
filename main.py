@@ -5,10 +5,10 @@ Passive web security analysis tool for educational purposes.
 import sys
 import logging
 from cli import parse_arguments
-from scanner.scanner_orchestrator import SecurityScanner
+from scanner.core.scanner_orchestrator import SecurityScanner
 from sessions.session_logger import SessionLogger
 from report.report_formatter import ReportFormatter
-from utils.allMenus import mainMenu
+from ui.menus import mainMenu
 
 # Configure logging
 # Redirect logs to a file to prevent interfering with the CLI progress bar

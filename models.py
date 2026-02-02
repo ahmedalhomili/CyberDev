@@ -23,11 +23,12 @@ class ReconData:
 class Finding:
     """Represents a single security finding."""
     title: str
-    severity: str  # 'HIGH', 'MEDIUM', 'LOW'
+    severity: str  # 'HIGH', 'MEDIUM', 'LOW', 'INFO', 'CRITICAL'
     description: str
     location: str  # Which header/component
     recommendation: str
     cwe_reference: Optional[str] = None  # CWE ID if applicable
+    confidence: str = "High" # 'High', 'Medium', 'Low'
     
     def to_dict(self):
         return asdict(self)
@@ -50,7 +51,8 @@ class ScanResult:
             'critical': sum(1 for f in self.findings if f.severity == 'CRITICAL'),
             'high': sum(1 for f in self.findings if f.severity == 'HIGH'),
             'medium': sum(1 for f in self.findings if f.severity == 'MEDIUM'),
-            'low': sum(1 for f in self.findings if f.severity == 'LOW')
+            'low': sum(1 for f in self.findings if f.severity == 'LOW'),
+            'info': sum(1 for f in self.findings if f.severity == 'INFO'),
         }
     
     def to_dict(self):
