@@ -312,9 +312,7 @@ def main():
             # Execute scan
             scanner = SecurityScanner(session_logger)
             try:
-                # Default to level 4 (all) if not specified via CLI (though CLI default handles it)
-                lvl = getattr(args, 'level', '4')
-                result = scanner.scan(args.url, args.verbose, level=lvl)
+                result = scanner.scan(args.url, args.verbose)
                 
                 # Display CLI output
                 formatter = ReportFormatter(result)
