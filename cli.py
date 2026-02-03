@@ -30,9 +30,6 @@ Examples:
     scan_parser.add_argument('url', help='Target URL to scan')
     scan_parser.add_argument('-v', '--verbose', action='store_true', 
                            help='Enable verbose output')
-    scan_parser.add_argument('-l', '--level', type=str, default='4',
-                           choices=['1', '2', '3', '4'],
-                           help='Scan depth level: 1=basic, 2=medium, 3=advanced, 4=full (default: 4)')
     scan_parser.add_argument('-j', '--json', metavar='FILE',
                            help='Export report as JSON to file')
     scan_parser.add_argument('-m', '--markdown', metavar='FILE',

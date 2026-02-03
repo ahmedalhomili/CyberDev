@@ -28,10 +28,19 @@
 git clone https://github.com/ahmedalhomili/CyberDev.git
 cd CyberDev
 
-# 2. تثبيت المكتبات
+# 2. إنشاء وتفعيل بيئة افتراضية (venv)
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+# 3. تثبيت المكتبات
 pip install -r requirements.txt
 
-# 3. تشغيل الفحص
+# 4. تشغيل الفحص
 python main.py scan https://example.com
 ```
 

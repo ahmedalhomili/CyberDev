@@ -9,7 +9,7 @@ from utils.helpers import clear_screen, is_valid_url
 from sessions.session_logger import SessionLogger
 from scanner.core.scanner_orchestrator import SecurityScanner
 from report.report_formatter import ReportFormatter
-from ui.progress import ProgressBar
+from ui.scan_progress import ScanProgress
 
 # Initialize core components
 session_logger = SessionLogger()
@@ -74,61 +74,16 @@ def start_new_scan_flow():
     print(f"\n{GREEN}[*] Initializing scan for: {url}{RESET}\n")
     
     # Progress Handler
-    progress_state = {'last_msg': None, 'last_step': 0, 'last_stats': None}
-    
-    def progress_handler(step, total, msg, prev_stats=None):
-        # Clear current line (Active Progress Bar)
-        sys.stdout.write('\r' + ' ' * 100 + '\r')
-        
-        # If we moved to a new step, mark the previous one as Done
-        if progress_state['last_msg'] and step > progress_state['last_step']:
-            # Determine symbol and color based on prev_stats
-            symbol = f"{GREEN}[✓]{RESET}"
-            
-            if prev_stats is not None:
-                count = prev_stats.get('count', 0)
-                severity = prev_stats.get('max_severity', 'INFO')
-                
-                if count > 0:
-                    # Found something - Set color based on max severity
-                    color = GREEN # Default for INFO
-                    if severity == 'LOW': color = CYAN
-                    elif severity == 'MEDIUM': color = YELLOW
-                    elif severity == 'HIGH': color = RED
-                    elif severity == 'CRITICAL': color = MAGENTA
-                    
-                    symbol = f"{color}[✓]{RESET}"
-                else:
-                    # Nothing found - Clean
-                    symbol = f"{GRAY}[✗]{RESET}"
-            
-            print(f"{symbol} {progress_state['last_msg']}")
-            
-        # Draw Progress Bar for Current Step
-        percent = 100 * (step / float(total))
-        if percent > 100: percent = 100
-        bar_len = 30
-        filled = int(bar_len * step // total)
-        if filled > bar_len: filled = bar_len
-        bar = '█' * filled + '░' * (bar_len - filled)
-        
-        sys.stdout.write(f"{CYAN}[Step {step:02d}/{total}]{RESET} [{GREEN}{bar}{RESET}] {percent:3.0f}% {msg}")
-        sys.stdout.flush()
-        
-        progress_state['last_msg'] = msg
-        progress_state['last_step'] = step
-        progress_state['last_stats'] = prev_stats
+    progress = ScanProgress()
 
     try:
         # Run the full scan using the orchestrator
         start_time = time.time()
-        scan_result = scanner.scan(url, verbose=False, progress_callback=progress_handler)
+        scan_result = scanner.scan(url, verbose=False, progress_callback=progress.handle)
         end_time = time.time()
         
         # Finalize the last step
-        sys.stdout.write('\r' + ' ' * 100 + '\r')
-        if progress_state['last_msg'] and "Scan Finished" not in progress_state['last_msg']:
-             print(f"{GREEN}[✓]{RESET} {progress_state['last_msg']}")
+        progress.finalize()
         
         # Brief pause
         time.sleep(0.5)
