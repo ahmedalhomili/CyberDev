@@ -7,10 +7,6 @@
 | **scan** | فحص موقع | `python main.py scan https://example.com` |
 | **history** | عرض السجلات | `python main.py history` |
 | **show** | عرض فحص معين | `python main.py show <id>` |
-| **export** | تصدير تقرير | `python main.py export <id> --json` |
-| **delete** | حذف جلسة | `python main.py delete <id>` |
-| **compare** | مقارنة فحصين | `python main.py compare <id1> <id2>` |
-| **version** | معلومات النسخة | `python main.py version` |
 | **help** | مساعدة سريعة | `python main.py help` |
 | **man** | دليل شامل | `python main.py man` |
 
@@ -51,39 +47,7 @@
 
 ---
 
-## 📤 خيارات أمر EXPORT
-
-```bash
---json                # تصدير JSON
---markdown            # تصدير Markdown
---html                # تصدير HTML
---csv                 # تصدير CSV
---xml                 # تصدير XML
--a, --all             # تصدير جميع الصيغ
-```
-
----
-
-## 🗑️ خيارات أمر DELETE
-
-```bash
---all                 # حذف جميع الجلسات
---older-than DAYS     # حذف أقدم من X يوم
--f, --force           # بدون تأكيد
-```
-
----
-
-## 🔍 خيارات أمر COMPARE
-
-```bash
---format cli|json|html  # صيغة المقارنة
--o, --output FILE       # حفظ في ملف
-```
-
----
-
-## 💡 أمثلة عملية
+## � أمثلة عملية
 
 ### فحص بسيط
 ```bash
@@ -102,22 +66,12 @@ python main.py scan https://example.com --proxy http://127.0.0.1:8080
 
 ### عرض آخر 5 فحوصات
 ```bash
-python main.py history --limit 5 --sort newest
+python main.py history --limit 5
 ```
 
-### تصدير تقرير بجميع الصيغ
+### عرض تفاصيل فحص معين
 ```bash
-python main.py export <session_id> -a
-```
-
-### مقارنة فحصين
-```bash
-python main.py compare <id1> <id2> --format html -o comparison.html
-```
-
-### حذف جلسات قديمة
-```bash
-python main.py delete --older-than 30 --force
+python main.py show <session_id>
 ```
 
 ---

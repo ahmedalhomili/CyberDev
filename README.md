@@ -128,10 +128,6 @@ python main.py scan --help
 | `scan` | فحص موقع | `python main.py scan https://example.com` |
 | `history` | عرض الفحوصات السابقة | `python main.py history --limit 10` |
 | `show` | عرض تفاصيل فحص | `python main.py show <session_id>` |
-| `export` | تصدير تقرير | `python main.py export <session_id> --json` |
-| `delete` | حذف جلسات | `python main.py delete <session_id>` |
-| `compare` | مقارنة فحصين | `python main.py compare <id1> <id2>` |
-| `version` | معلومات النسخة | `python main.py version` |
 | `help` | مساعدة سريعة | `python main.py help` |
 | `man` | دليل شامل | `python main.py man` |
 
