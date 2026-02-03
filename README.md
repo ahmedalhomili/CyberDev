@@ -41,117 +41,137 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 4. تشغيل الفحص
-python main.py scan https://example.com
+python main.py
 ```
 
 ---
 
-## 🎯 الاستخدام الأساسي
+## 🎯 الاستخدام
 
-### فحص موقع
+### 🖥️ الوضع التفاعلي (موصى به)
 ```bash
+python main.py
+```
+سيعرض قائمة تفاعلية مع شريط تقدم ملون لمتابعة الفحص.
+
+### ⚡ الوضع السريع (CLI)
+```bash
+# فحص بسيط
 python main.py scan https://example.com
-```
 
-### فحص مع خيارات
-```bash
-python main.py scan https://example.com --level 3 --verbose
-python main.py scan https://example.com --timeout 15
-python main.py scan https://example.com -o report
-```
+# فحص مع تفاصيل
+python main.py scan https://example.com -v
 
-### عرض الفحوصات السابقة
-```bash
+# تصدير نتائج
+python main.py scan https://example.com --json report.json
+python main.py scan https://example.com --html report.html
+
+# عرض السجلات
 python main.py history
 python main.py show <session_id>
 ```
 
-### مساعدة
-```bash
-python main.py --help
-python main.py scan --help
-```
-
 ---
 
-## 🐛 الثغرات المدعومة (18+)
-
-| الفئة | الثغرات |
-|------|---------|
-| **Web Apps** | SQL Injection, XSS, RCE, LFI, SSRF, XXE, SSTI |
-| **APIs** | JWT Security, API Security, Auth Flaws, GraphQL |
-| **Infrastructure** | Open Redirect, Host Header Injection, Cache Poisoning |
-| **Others** | Rate Limiting, File Upload, WebSocket, Deserialization |
-
----
-
-## 📊 التقارير المدعومة
-
-- **CLI** - عرض ملون على الشاشة
-- **JSON** - للتكامل مع أدوات أخرى
-- **HTML** - تقارير احترافية
-- **Markdown** - للتوثيق
-- **CSV** - للتحليل
-
----
-
-## 🔍 كيف يعمل الفحص؟
-
-### المراحل الأربعة:
-
-**1. الاستطلاع (Reconnaissance)**
-```
-• جمع معلومات Whois
-• تحليل DNS
-• فحص البورتات
-• اكتشاف التقنيات
-```
-
-**2. اكتشاف URLs**
-```
-• الزحف التلقائي للموقع
-• اكتشاف الروابط والـ Parameters
-• تحليل Forms
-```
-
-**3. فحص الثغرات**
-```
-• اختبار 18+ نوع ثغرة
-• استخدام Payloads متقدمة
-• تحليل الاستجابات
-```
-
-**4. التقارير**
-```
-• تصنيف الثغرات حسب الخطورة
-• تصدير بعدة صيغ
-• حفظ الجلسات
-```
-
----
-
-## 📚 جميع الأوامر
+## 📚 الأوامر المتاحة
 
 | الأمر | الوصف | مثال |
 |------|-------|------|
 | `scan` | فحص موقع | `python main.py scan https://example.com` |
 | `history` | عرض الفحوصات السابقة | `python main.py history --limit 10` |
-| `show` | عرض تفاصيل فحص | `python main.py show <session_id>` |
-| `help` | مساعدة سريعة | `python main.py help` |
-| `man` | دليل شامل | `python main.py man` |
+| `show` | عرض تفاصيل فحص معين | `python main.py show <session_id>` |
+| `help` | عرض مساعدة سريعة | `python main.py help` |
+| `man` | عرض دليل شامل | `python main.py man` |
 
-### خيارات الفحص المتقدمة
+### خيارات أمر `scan`
 
-```bash
---level {1,2,3,4}          # مستوى الفحص (افتراضي: 4)
---verbose                  # عرض تفاصيل أكثر
---timeout SECONDS          # وقت انتظار الطلب
---user-agent "TEXT"        # User-Agent مخصص
---proxy http://proxy:port  # استخدام بروكسي
---no-ssl-verify            # تجاوز تحقق SSL
---xml report.xml           # تصدير XML
--o prefix                  # بادئة اسم الملفات
+| الخيار | الوصف | مثال |
+|--------|-------|------|
+| `-v, --verbose` | عرض تفاصيل الفحص | `--verbose` |
+| `-j, --json FILE` | تصدير JSON | `--json report.json` |
+| `-m, --markdown FILE` | تصدير Markdown | `--markdown report.md` |
+| `--html FILE` | تصدير HTML | `--html report.html` |
+| `--csv FILE` | تصدير CSV | `--csv report.csv` |
+
+---
+
+## 🐛 الثغرات المدعومة (18+)
+
+### تطبيقات الويب
+- 🔴 **SQL Injection** - حقن قواعد البيانات
+- 🔴 **Cross-Site Scripting (XSS)** - هجمات JavaScript
+- 🔴 **Remote Code Execution (RCE)** - تنفيذ أوامر عن بعد
+- 🟠 **Local File Inclusion (LFI)** - قراءة ملفات النظام
+- 🟠 **Server-Side Request Forgery (SSRF)** - تزوير طلبات الخادم
+- 🟠 **XML External Entity (XXE)** - هجمات XML
+- 🟠 **Server-Side Template Injection (SSTI)** - حقن القوالب
+
+### APIs والمصادقة
+- 🔴 **JWT Security** - فحص JSON Web Tokens
+- 🟠 **API Security** - BOLA, Mass Assignment
+- 🟠 **Authentication Flaws** - ثغرات المصادقة
+- 🟠 **GraphQL Security** - فحص GraphQL
+
+### البنية التحتية
+- 🟠 **Open Redirect** - إعادة توجيه غير آمنة
+- 🟠 **Host Header Injection** - حقن رأس المضيف
+- 🟠 **Cache Poisoning** - تسميم الذاكرة المؤقتة
+- 🟢 **File Upload Security** - أمان رفع الملفات
+- 🔵 **WebSocket Security** - أمان WebSocket
+- 🔵 **Insecure Deserialization** - فك تسلسل غير آمن
+
+---
+
+## 📊 التقارير
+
+### صيغ التصدير
+- **CLI Output** - عرض ملون تفاعلي على الشاشة
+- **JSON** - للتكامل مع أدوات أخرى
+- **HTML** - تقارير احترافية قابلة للطباعة
+- **Markdown** - للتوثيق
+- **CSV** - للتحليل في Excel
+
+### حفظ تلقائي
+يتم حفظ جميع الفحوصات تلقائياً في:
 ```
+sessions/scan_sessions/SWVC-YYYYMMDD-HHMMSS-domain-hash.json
+```
+
+---
+
+## 🔍 كيف يعمل الفحص؟
+
+### 1️⃣ الاستطلاع (Reconnaissance)
+- جمع معلومات Whois
+- تحليل DNS و SPF/DMARC
+- فحص البورتات المفتوحة
+- اكتشاف التقنيات المستخدمة
+- تحديد الموقع الجغرافي
+- الكشف عن CDN/WAF
+- فحص شهادات SSL/TLS
+
+### 2️⃣ الزحف واكتشاف URLs
+- زحف تلقائي للموقع (عمق: 2 مستويات)
+- اكتشاف URLs مع Parameters
+- تحليل Forms ومدخلات المستخدم
+- فحص robots.txt
+- Directory Fuzzing
+
+### 3️⃣ فحص الثغرات (21 خطوة)
+يتم اختبار **18+ نوع ثغرة** على URLs المكتشفة:
+- SQL Injection (Error-based, Time-based, Boolean-based)
+- XSS (Reflected, Stored)
+- RCE, LFI, SSTI, SSRF, XXE
+- Open Redirect, Host Header Injection
+- JWT, GraphQL, Deserialization
+- Authentication & Session Management
+- File Upload, API Security, WebSocket
+
+### 4️⃣ التقرير
+- تصنيف حسب الخطورة: CRITICAL, HIGH, MEDIUM, LOW, INFO
+- توليد Session ID فريد
+- حفظ تلقائي في مجلد sessions
+- تصدير بصيغ متعددة
 
 ---
 
@@ -159,45 +179,95 @@ python main.py scan --help
 
 ```
 CyberDev/
-├── main.py                # نقطة الدخول
-├── cli.py                 # واجهة CLI
-├── config.py              # الإعدادات
-├── models.py              # نماذج البيانات
+├── main.py                    # نقطة الدخول الرئيسية
+├── cli.py                     # معالج سطر الأوامر
+├── config.py                  # الإعدادات المركزية
+├── models.py                  # نماذج البيانات (Finding, ScanResult)
+├── requirements.txt           # المكتبات المطلوبة
 │
-├── scanner/
-│   ├── core/              # المحرك الأساسي
-│   ├── recon/             # الاستطلاع
-│   └── vulnerabilities/   # فاحصات الثغرات
+├── scanner/                   # محرك الفحص
+│   ├── core/
+│   │   ├── scanner_orchestrator.py  # منسق الفحص الرئيسي
+│   │   ├── http_handler.py          # معالج طلبات HTTP
+│   │   └── requester.py             # إدارة الطلبات
+│   │
+│   ├── recon/                 # الاستطلاع
+│   │   ├── recon_analyzer.py        # جمع معلومات Whois/DNS/GeoIP
+│   │   ├── headers_analyzer.py      # فحص Security Headers
+│   │   ├── cors_analyzer.py         # فحص CORS
+│   │   ├── content_analyzer.py      # فحص المحتوى (Secrets)
+│   │   ├── robots_check.py          # فحص robots.txt
+│   │   ├── link_crawler.py          # الزحف واكتشاف URLs
+│   │   └── explore_fuzzer.py        # Directory Fuzzing
+│   │
+│   └── vulnerabilities/       # فاحصات الثغرات (18 فاحص)
+│       ├── vuln_sqli.py             # SQL Injection
+│       ├── vuln_xss.py              # Cross-Site Scripting
+│       ├── vuln_rce.py              # Remote Code Execution
+│       ├── vuln_lfi.py              # Local File Inclusion
+│       ├── vuln_ssrf.py             # Server-Side Request Forgery
+│       ├── vuln_ssti.py             # Template Injection
+│       ├── vuln_xxe.py              # XML External Entity
+│       ├── vuln_jwt.py              # JWT Security
+│       ├── vuln_graphql.py          # GraphQL Security
+│       ├── vuln_redirect.py         # Open Redirect
+│       ├── vuln_host_header.py      # Host Header Injection
+│       ├── vuln_cache_poisoning.py  # Cache Poisoning
+│       ├── vuln_auth_workflow.py    # Authentication
+│       ├── vuln_upload_checks.py    # File Upload
+│       ├── vuln_api_security.py     # API Security
+│       ├── vuln_websocket.py        # WebSocket Security
+│       └── vuln_deserialization.py  # Deserialization
 │
-├── report/                # نظام التقارير
-├── sessions/              # حفظ الجلسات
-└── ui/                    # واجهة المستخدم
-
+├── report/                    # نظام التقارير
+│   └── report_formatter.py   # توليد تقارير بصيغ متعددة
+│
+├── sessions/                  # حفظ الجلسات
+│   ├── session_logger.py      # إدارة الجلسات
+│   └── scan_sessions/         # ملفات JSON للفحوصات
+│
+├── ui/                        # واجهة المستخدم
+│   ├── menus.py               # القوائم التفاعلية
+│   ├── scan_progress.py       # شريط التقدم الملون
+│   ├── colors.py              # ألوان ANSI
+│   ├── logo.py                # شعار الأداة
+│   └── progress.py            # Progress Bar
+│
+└── utils/                     # أدوات مساعدة
+    ├── helpers.py             # دوال عامة
+    ├── network.py             # أدوات الشبكة
+    └── severity.py            # تصنيف الخطورة
 ```
 
 ---
 
-## 🎯 الوضع التفاعلي
+## 🔗 ملفات التوثيق
 
-```bash
-python main.py```
-
-سيعرض قائمة تفاعلية بسيطة لبدء الفحص أو عرض السجلات.
+| الملف | الوصف |
+|-------|--------|
+| [README.md](README.md) | دليل الاستخدام الأساسي (هذا الملف) |
+| [CLI_GUIDE.md](CLI_GUIDE.md) | مرجع سريع لجميع الأوامر والخيارات |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | شرح مفصل لهيكل المشروع (للمطورين) |
+| [CHANGELOG.md](CHANGELOG.md) | سجل التغييرات والإصدارات |
 
 ---
 
-## 🔗 المصادر
+## 💡 نصائح
 
-- [CLI_GUIDE.md](CLI_GUIDE.md) - دليل الأوامر التفصيلي
-- [ARCHITECTURE.md](ARCHITECTURE.md) - شرح هيكل المشروع
-- [CHANGELOG.md](CHANGELOG.md) - سجل التغييرات
+### للحصول على أفضل النتائج:
+1. استخدم الوضع التفاعلي (`python main.py`) للحصول على تجربة أفضل
+2. جرب على مواقع تجريبية آمنة مثل:
+   - http://testphp.vulnweb.com
+   - http://demo.testfire.net
+3. استخدم `--verbose` لمعرفة تفاصيل كل خطوة
+4. احفظ التقارير بصيغ متعددة للمراجعة
 
 ---
 
 ## 📧 التواصل
 
-لأي استفسارات أو مساعدة:
-- GitHub: [@ahmedalhomili](https://github.com/ahmedalhomili)
+- **GitHub**: [@ahmedalhomili](https://github.com/ahmedalhomili)
+- **Project**: [CyberDev Security Scanner](https://github.com/ahmedalhomili/CyberDev)
 
 ---
 
