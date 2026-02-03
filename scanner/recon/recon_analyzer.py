@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 class ReconAnalyzer:
     """Performs passive and active reconnaissance on target."""
 
-    COMMON_PORTS = [21, 22, 23, 25, 53, 80, 110, 143, 443, 465, 587, 993, 995, 3306, 3389, 5432, 6379, 8080, 8443]
-
     def analyze(self, url: str, headers: Dict[str, str] = None) -> ReconData:
         """
         Run all recon checks.
@@ -147,7 +145,7 @@ class ReconAnalyzer:
         logger.info(f"Scanning common ports on {ip}...")
         
         # Critical ports that are most likely to be legitimately open
-        PRIORITY_PORTS = [80, 443, 8080, 8443, 22, 21, 3389]
+        PRIORITY_PORTS = [21, 22, 23, 25, 53, 80, 110, 143, 443, 465, 587, 993, 995, 3306, 3389, 5432, 6379, 8080, 8443]
         
         # Scan priority ports first
         for port in PRIORITY_PORTS:

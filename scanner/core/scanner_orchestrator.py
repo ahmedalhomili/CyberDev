@@ -203,101 +203,101 @@ class SecurityScanner:
         active_findings = []
 
         # Step 9: SQL Injection
-        if progress_callback: progress_callback(9, steps_total, "Scanning for SQL Injection (SQLi)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.sqli_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(9, steps_total, "Scanning for SQL Injection (SQLi)...", prev_stats)
 
         # Step 10: XSS
-        if progress_callback: progress_callback(10, steps_total, "Scanning for Cross-Site Scripting (XSS)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.xss_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(10, steps_total, "Scanning for Cross-Site Scripting (XSS)...", prev_stats)
 
         # Step 11: RCE
-        if progress_callback: progress_callback(11, steps_total, "Auditing for Remote Code Execution (RCE)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.rce_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(11, steps_total, "Auditing for Remote Code Execution (RCE)...", prev_stats)
 
         # Step 12: LFI
-        if progress_callback: progress_callback(12, steps_total, "Checking for Local File Inclusion (LFI)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.lfi_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(12, steps_total, "Checking for Local File Inclusion (LFI)...", prev_stats)
 
         # Step 13: SSTI
-        if progress_callback: progress_callback(13, steps_total, "Testing for Server-Side Template Injection (SSTI)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.ssti_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(13, steps_total, "Testing for Server-Side Template Injection (SSTI)...", prev_stats)
 
         # Step 14: SSRF
-        if progress_callback: progress_callback(14, steps_total, "Analyzing for Server-Side Request Forgery (SSRF)...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.ssrf_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(14, steps_total, "Analyzing for Server-Side Request Forgery (SSRF)...", prev_stats)
 
         # Step 15: Open Redirect
-        if progress_callback: progress_callback(15, steps_total, "Checking for Open Redirect Vulnerabilities...", prev_stats)
         step_findings = []
         for test_url in testable_urls:
             step_findings.extend(self.redirect_scanner.scan(test_url))
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(15, steps_total, "Checking for Open Redirect Vulnerabilities...", prev_stats)
 
         # Step 16: Host Header
-        if progress_callback: progress_callback(16, steps_total, "Analyzing Host Header Risks...", prev_stats)
         step_findings = self.host_header_scanner.scan(url)
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(16, steps_total, "Analyzing Host Header Risks...", prev_stats)
 
         # Step 17: Advanced Misconfigurations (JWT, GraphQL, Serialization)
-        if progress_callback: progress_callback(17, steps_total, "Inspecting JWT, GraphQL, & Serialization...", prev_stats)
         step_findings = self.jwt_scanner.scan(url) + self.graphql_scanner.scan(url) + self.deserialization_scanner.scan(url)
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(17, steps_total, "Inspecting JWT, GraphQL, & Serialization...", prev_stats)
 
         # Step 18: Authentication & Session Management
-        if progress_callback: progress_callback(18, steps_total, "Checking Authentication & Session Security...", prev_stats)
         step_findings = []
         if response_obj:
             step_findings = self.auth_scanner.scan(url, response_obj)
             active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(18, steps_total, "Checking Authentication & Session Security...", prev_stats)
 
         # Step 19: File Upload & XXE
-        if progress_callback: progress_callback(19, steps_total, "Analyzing File Upload & XXE Risks...", prev_stats)
         step_findings = []
         if response_obj:
             step_findings += self.upload_scanner.scan(url, response_obj.text)
             step_findings += self.xxe_scanner.check_response_for_xxe_potential(response_obj)
             active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(19, steps_total, "Analyzing File Upload & XXE Risks...", prev_stats)
 
         # Step 20: API & WebSocket Security
-        if progress_callback: progress_callback(20, steps_total, "Inspecting API Endpoints & WebSockets...", prev_stats)
         step_findings = self.api_scanner.scan(url) + self.websocket_scanner.scan(url)
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(20, steps_total, "Inspecting API Endpoints & WebSockets...", prev_stats)
 
         # Step 21: Cache Poisoning checks
-        if progress_callback: progress_callback(21, steps_total, "Analyzing Web Cache Poisoning Risks...", prev_stats)
         step_findings = self.cache_poisoning_scanner.check_cache_headers(headers, url)
         active_findings.extend(step_findings)
         prev_stats = self._calculate_stats(step_findings)
+        if progress_callback: progress_callback(21, steps_total, "Analyzing Web Cache Poisoning Risks...", prev_stats)
 
         # Final signal for last step
         if progress_callback: progress_callback(steps_total + 1, steps_total, "Scan Finished", prev_stats)
