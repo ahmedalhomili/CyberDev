@@ -21,3 +21,46 @@ rad.json
 #Test results file
 TestResults.xml
 .sessions/scan_sessions
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+scanner_debug.log
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Reports
+report_*.json
+report_*.html
+report_*.md
+report_*.csv

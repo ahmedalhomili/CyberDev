@@ -208,6 +208,23 @@ class ReconAnalyzer:
     def _fetch_subdomains_crtsh(self, domain: str) -> List[str]:
         """Fetch subdomains from crt.sh (Certificate Transparency Logs)."""
         subdomains = set()
+        url = f"https://crt.sh/?q=%.{domain}&output=json"
+        
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                for entry in data:
+                    name_value = entry.get('name_value', '')
+                    # Split multiline names and clean
+                    for sub in name_value.split('\n'):
+                        if '*' not in sub and sub.endswith(domain):
+                            subdomains.add(sub.lower())
+        except Exception as e:
+            logger.warning(f"CRT.sh lookup failed: {e}")
+        
+        # Return top 15 to avoid flooding output
+        return sorted(list(subdomains))[:15]
     
     def _get_geolocation(self, ip: str) -> Dict[str, Any]:
         """Get geolocation information for IP address."""
@@ -418,20 +435,3 @@ class ReconAnalyzer:
             logger.debug(f"SSL info lookup failed: {e}")
         
         return ssl_info
-        url = f"https://crt.sh/?q=%.{domain}&output=json"
-        
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                for entry in data:
-                    name_value = entry.get('name_value', '')
-                    # Split multiline names and clean
-                    for sub in name_value.split('\n'):
-                        if '*' not in sub and sub.endswith(domain):
-                            subdomains.add(sub.lower())
-        except Exception as e:
-            logger.warning(f"CRT.sh lookup failed: {e}")
-        
-        # Return top 15 to avoid flooding output
-        return sorted(list(subdomains))[:15]
