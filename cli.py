@@ -38,6 +38,9 @@ Examples:
                            help='Export report as HTML to file')
     scan_parser.add_argument('--csv', metavar='FILE',
                            help='Export report as CSV to file')
+    scan_parser.add_argument('-p', '--profile', choices=['passive', 'standard', 'extended'],
+                           default='standard',
+                           help='Scan profile: passive=Quick Scan (recon only), standard=Full Scan (default), extended=Deep Audit (comprehensive)')
     
     # History command
     history_parser = subparsers.add_parser('history', help='View scan history')

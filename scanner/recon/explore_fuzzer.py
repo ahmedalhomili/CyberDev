@@ -362,25 +362,26 @@ class DirectoryFuzzer:
                     description = f"Package manifest exposed: {path}"
 
                 if is_valid:
-                    # Upgrade severity for critical files
-                    if ".env" in path or ("config" in path and severity != "INFO") or "backup" in path:
-                        severity = "HIGH"
-                        description += " (Contains potentially sensitive configuration or backup data)"
-                    if ".git" in path:
-                        severity = "HIGH"
-                        description += " (Source code repository exposed)"
-                    if ".ssh" in path or ".aws" in path or "passwd" in path:
+                    # Classify finding by path type
+                    title, category, cwe = self._classify_path(path)
+
+                    # Upgrade severity for critical categories
+                    if category == "Credential Leak":
                         severity = "CRITICAL"
                         description += " (Critical credential/key exposure)"
+                    elif category in ("Configuration Exposure", "Source Code Leak"):
+                        if severity != "INFO":
+                            severity = "HIGH"
 
                     return Finding(
-                        title="Sensitive File/Directory Discovered",
+                        title=title,
                         severity=severity,
                         description=description,
                         location=target_url,
-                        recommendation="Restrict access to sensitive administrative or configuration files. Remove backup files from the web root.",
-                        cwe_reference="CWE-538",
-                        confidence="High"
+                        recommendation="Restrict access to sensitive files. Remove backup, debug, and configuration files from the web root.",
+                        cwe_reference=cwe,
+                        confidence="High",
+                        category=category,
                     )
 
             except Exception:
@@ -395,3 +396,63 @@ class DirectoryFuzzer:
                     findings.append(result)
 
         return findings
+
+    def _classify_path(self, path: str) -> tuple:
+        """Classify a discovered path into (title, category, cwe_reference)."""
+        p = path.lower()
+
+        # Credentials & keys (highest priority)
+        if any(k in p for k in (".ssh", ".aws", "passwd", "shadow",
+                                 "credentials.txt", "password.txt", "api_keys.txt",
+                                 "secrets.txt", "token.txt")):
+            return "Critical Credential Exposure", "Credential Leak", "CWE-798"
+
+        # Environment / config files
+        if any(k in p for k in (".env", "config", "settings", "database.php",
+                                 "db.php", "wp-config", "web.config",
+                                 "application.properties", "local_settings")):
+            return "Environment/Config File Exposed", "Configuration Exposure", "CWE-538"
+
+        # Version control
+        if any(k in p for k in (".git", ".svn", ".hg", ".bzr")):
+            return "Version Control Exposure", "Source Code Leak", "CWE-538"
+
+        # Backups & database dumps
+        if ("backup" in p or ".sql" in p
+                or p.endswith((".zip", ".tar.gz", ".tar", ".rar", ".old"))):
+            return "Backup File Accessible", "Configuration Exposure", "CWE-530"
+
+        # Debug / info disclosure
+        if any(k in p for k in ("phpinfo", "server-status", "server-info",
+                                 "debug", "trace.axd", "elmah.axd", "info.php")):
+            return "Debug/Info File Exposed", "Information Disclosure", "CWE-200"
+
+        # Admin entry points
+        if any(k in p for k in ("admin", "login", "cpanel", "phpmyadmin",
+                                 "manager", "dashboard", "webmail",
+                                 "controlpanel")):
+            return "Admin Entry Point Found", "Information Disclosure", "CWE-200"
+
+        # Log files
+        if p.endswith((".log", "_log")) or "laravel.log" in p:
+            return "Log File Accessible", "Information Disclosure", "CWE-532"
+
+        # API documentation
+        if any(k in p for k in ("swagger", "api-docs", "graphql", "openapi")):
+            return "API Documentation Exposed", "Information Disclosure", "CWE-200"
+
+        # Container config
+        if any(k in p for k in ("docker", "kubernetes")):
+            return "Container Configuration Exposed", "Configuration Exposure", "CWE-538"
+
+        # Package manifests
+        if any(k in p for k in ("package.json", "composer.json", "requirements.txt",
+                                 "gemfile", "pom.xml", "yarn.lock")):
+            return "Package Manifest Exposed", "Information Disclosure", "CWE-200"
+
+        # Server configuration
+        if any(k in p for k in (".htaccess", ".htpasswd", ".user.ini")):
+            return "Server Configuration Exposed", "Configuration Exposure", "CWE-538"
+
+        # Fallback
+        return "Sensitive File/Directory Discovered", "Information Disclosure", "CWE-538"
