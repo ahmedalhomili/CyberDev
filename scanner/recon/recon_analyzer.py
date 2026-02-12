@@ -6,10 +6,12 @@ import socket
 import logging
 import requests
 import dns.resolver
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 from typing import List, Dict, Any, Optional
 import whois
 from models import ReconData
+from config import PORT_SCAN_TIMEOUT, PORT_SCAN_THREADS, COMMON_PORTS
 
 logger = logging.getLogger(__name__)
 
@@ -140,35 +142,40 @@ class ReconAnalyzer:
             return None
 
     def _scan_ports(self, ip: str) -> List[int]:
-        """Scan for open ports with improved accuracy."""
+        """Scan for open ports using concurrent threads for speed."""
         open_ports = []
-        logger.info(f"Scanning common ports on {ip}...")
-        
-        # Critical ports that are most likely to be legitimately open
-        PRIORITY_PORTS = [21, 22, 23, 25, 53, 80, 110, 143, 443, 465, 587, 993, 995, 3306, 3389, 5432, 6379, 8080, 8443]
-        
-        # Scan priority ports first
-        for port in PRIORITY_PORTS:
+        ports_to_scan = list(set(COMMON_PORTS))
+        logger.info(f"Scanning {len(ports_to_scan)} ports on {ip} with {PORT_SCAN_THREADS} threads...")
+
+        def _check_port(port: int) -> Optional[int]:
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(1.5)
+                sock.settimeout(PORT_SCAN_TIMEOUT)
                 result = sock.connect_ex((ip, port))
-                if result == 0:
-                    logger.info(f"  ✓ Port {port} is OPEN")
-                    open_ports.append(port)
                 sock.close()
-            except Exception as e:
-                logger.debug(f"Error scanning port {port}: {e}")
+                if result == 0:
+                    return port
+            except Exception:
                 try:
                     sock.close()
-                except:
+                except Exception:
                     pass
-        
-        # If too many ports appear open, likely false positive - only report priority ports
-        if len(open_ports) > 10:
-            logger.warning(f"Unusual: {len(open_ports)} ports detected as open - filtering to common web/SSH ports only")
-            open_ports = [p for p in open_ports if p in [80, 443, 8080, 8443, 22]]
-        
+            return None
+
+        with ThreadPoolExecutor(max_workers=PORT_SCAN_THREADS) as executor:
+            futures = {executor.submit(_check_port, port): port for port in ports_to_scan}
+            for future in as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    open_ports.append(result)
+                    logger.info(f"  Port {result} is OPEN")
+
+        # If too many ports appear open, likely false positive (firewall/honeypot)
+        if len(open_ports) > 25:
+            logger.warning(f"Unusual: {len(open_ports)} ports detected as open - possible false positive")
+            open_ports = [p for p in open_ports if p in [80, 443, 8080, 8443, 22, 21, 25, 53, 3306, 5432]]
+
+        open_ports.sort()
         logger.info(f"Port scan complete: {len(open_ports)} open ports found")
         return open_ports
 

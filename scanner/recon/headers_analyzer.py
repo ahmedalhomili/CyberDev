@@ -39,27 +39,14 @@ class HeadersAnalyzer:
             )
         
         # Parse HSTS header
-        max_age_match = re.search(r'max-age=(\d+)', hsts_header, re.IGNORECASE)
+        max_age_match = re.search(r'max-age=(\d+)', hsts_header)
         has_subdomains = 'includesubdomains' in hsts_header.lower()
         
         if not max_age_match:
-            # If header is just whitespace or completely invalid
-            if not hsts_header.strip():
-                 return Finding(
-                    title='Missing HSTS Header (Best Practice)',
-                    severity='LOW',
-                    description='Strict-Transport-Security header is empty.',
-                    location='HTTP Response Headers',
-                    recommendation='Add: Strict-Transport-Security: max-age=31536000; '
-                                  'includeSubDomains; preload',
-                    cwe_reference='CWE-295',
-                    confidence='High'
-                )
-
             return Finding(
                 title='Malformed HSTS Header',
                 severity='MEDIUM',
-                description='HSTS header present but max-age not specified or invalid format.',
+                description='HSTS header present but max-age not specified.',
                 location='Strict-Transport-Security Header',
                 recommendation='Ensure max-age is set to a reasonable value (>=31536000)'
             )
