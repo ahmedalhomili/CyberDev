@@ -350,7 +350,7 @@ class DirectoryFuzzer:
                     is_valid = True
                 elif "docker" in path and ("FROM " in response.text or "image:" in content):
                     is_valid = True
-                elif "log" in path and len(response.content) > 200:
+                elif (path.endswith(".log") or path.endswith("_log") or path in ("error.log", "error_log", "access.log", "access_log", "debug.log", "application.log", "app.log", "logs/error.log", "logs/access.log")) and len(response.content) > 200:
                     is_valid = True
                     severity = "LOW"
                     description = f"Log file accessible: {path}"

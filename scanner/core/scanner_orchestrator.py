@@ -302,8 +302,15 @@ class SecurityScanner:
         # Final signal for last step
         if progress_callback: progress_callback(steps_total + 1, steps_total, "Scan Finished", prev_stats)
 
-        # Final Compilation        
-        all_findings = header_findings + cors_findings + content_findings + robots_findings + fuzzer_findings + active_findings
+        # Final Compilation (with deduplication)
+        all_findings_raw = header_findings + cors_findings + content_findings + robots_findings + fuzzer_findings + active_findings
+        seen = set()
+        all_findings = []
+        for f in all_findings_raw:
+            key = (f.title, f.location)
+            if key not in seen:
+                seen.add(key)
+                all_findings.append(f)
 
         scan_result = ScanResult(
             session_id=session_id,
