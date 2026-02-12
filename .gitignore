@@ -8,6 +8,10 @@ __pycache__/
 *$py.class
 *.so
 .Python
+__pycache__/
+*.pyc
+scanner_debug.log
+tmpclaude-*
 
 # Virtual Environment
 venv/
