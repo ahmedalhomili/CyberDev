@@ -3,6 +3,9 @@ Interactive Menu Handling using new Architecture.
 """
 import time
 import sys
+import os
+import re
+from urllib.parse import urlparse
 from ui.colors import RED, GREEN, BLUE, RESET, YELLOW, CYAN, MAGENTA, GRAY
 from utils.network import domain2ip
 from utils.helpers import clear_screen, is_valid_url
@@ -10,6 +13,7 @@ from sessions.session_logger import SessionLogger
 from scanner.core.scanner_orchestrator import SecurityScanner
 from report.report_formatter import ReportFormatter
 from ui.scan_progress import ScanProgress
+from config import REPORTS_DIR
 
 # Initialize core components
 session_logger = SessionLogger()
@@ -113,7 +117,7 @@ def start_new_scan_flow():
         while True:
             print(f"\n{YELLOW}Select an action:{RESET}")
             print(f"{GREEN}[1] View Full Report (On Screen){RESET}")
-            print(f"{GREEN}[2] Export Report (JSON, HTML, MD, CSV){RESET}")
+            print(f"{GREEN}[2] Export Report (JSON, HTML, MD, CSV, PDF){RESET}")
             print(f"{RED}[0] Return to Main Menu{RESET}")
             
             sub = input(f"\n{BLUE}Option >> {RESET}").strip()
@@ -126,31 +130,65 @@ def start_new_scan_flow():
             
             elif sub == '2':
                 print(f"\n{CYAN}Select formats to export:{RESET}")
-                print(f"{GREEN}[1] JSON  [2] Markdown  [3] HTML  [4] CSV{RESET}")
+                print(f"{GREEN}[1] JSON  [2] Markdown  [3] HTML  [4] CSV  [5] PDF{RESET}")
                 export_choice = input(f"{BLUE}Formats (e.g. 1,3) >> {RESET}").strip()
                 
                 if export_choice:
                     choices = export_choice.replace(',', ' ').split()
                     timestamp = time.strftime("%Y%m%d_%H%M%S")
-                    base_name = f"report_{timestamp}"
-                    
+                    # derive a safe domain label from the target URL
+                    try:
+                        parsed = urlparse(scan_result.target_url)
+                        domain_raw = parsed.netloc or parsed.path.split('/')[0]
+                        # strip possible port
+                        domain_raw = domain_raw.split(':')[0]
+                        domain_label = re.sub(r'[^A-Za-z0-9._-]+', '_', domain_raw).strip('_').lower()
+                        if not domain_label:
+                            domain_label = 'target'
+                    except Exception:
+                        domain_label = 'target'
+
+                    base_name = f"report_{domain_label}_{timestamp}"
+
+                    # map menu choice to (subfolder, extension)
+                    fmt_map = {
+                        '1': ('json', 'json'),
+                        '2': ('md', 'md'),
+                        '3': ('html', 'html'),
+                        '4': ('csv', 'csv'),
+                        '5': ('pdf', 'pdf'),
+                    }
+
                     for c in choices:
+                        sub = fmt_map.get(c)
+                        if not sub:
+                            continue
+                        subfolder, ext = sub
+                        out_dir = os.path.join(REPORTS_DIR, subfolder)
+                        os.makedirs(out_dir, exist_ok=True)
+                        out_path = os.path.join(out_dir, f"{base_name}.{ext}")
+
                         if c == '1':
-                            with open(f"{base_name}.json", 'w', encoding='utf-8') as f:
+                            with open(out_path, 'w', encoding='utf-8') as f:
                                 f.write(formatter.format_json())
-                            print(f"{GREEN}Saved: {base_name}.json{RESET}")
+                            print(f"{GREEN}Saved: {out_path}{RESET}")
                         elif c == '2':
-                            with open(f"{base_name}.md", 'w', encoding='utf-8') as f:
+                            with open(out_path, 'w', encoding='utf-8') as f:
                                 f.write(formatter.format_markdown())
-                            print(f"{GREEN}Saved: {base_name}.md{RESET}")
+                            print(f"{GREEN}Saved: {out_path}{RESET}")
                         elif c == '3':
-                            with open(f"{base_name}.html", 'w', encoding='utf-8') as f:
+                            with open(out_path, 'w', encoding='utf-8') as f:
                                 f.write(formatter.format_html())
-                            print(f"{GREEN}Saved: {base_name}.html{RESET}")
+                            print(f"{GREEN}Saved: {out_path}{RESET}")
                         elif c == '4':
-                            with open(f"{base_name}.csv", 'w', encoding='utf-8') as f:
+                            with open(out_path, 'w', encoding='utf-8') as f:
                                 f.write(formatter.format_csv())
-                            print(f"{GREEN}Saved: {base_name}.csv{RESET}")
+                            print(f"{GREEN}Saved: {out_path}{RESET}")
+                        elif c == '5':
+                            pdf_bytes = formatter.format_pdf()
+                            with open(out_path, 'wb') as f:
+                                f.write(pdf_bytes)
+                            print(f"{GREEN}Saved: {out_path}{RESET}")
                     print(f"\n{GREEN}Export complete!{RESET}")
             
             elif sub == '0':
