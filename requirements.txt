@@ -4,3 +4,4 @@ dnspython
 beautifulsoup4
 fake-useragent
 certifi
+reportlab>=3.6.12
