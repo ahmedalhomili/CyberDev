@@ -50,6 +50,10 @@ LOG_FORMAT = '%(timestamp)s - %(level)s - %(message)s'
 MAX_RETRIES = 3
 REQUEST_TIMEOUT = 10  # seconds
 
+# Reports directory (top-level folder where format-specific subfolders will be created)
+# Example structure after export: ./reports/json, ./reports/html, ./reports/md, ./reports/csv, ./reports/pdf
+REPORTS_DIR = './reports'
+
 # Link Crawler Configuration
 CRAWLER_MAX_DEPTH = 2
 CRAWLER_MAX_URLS = 30
@@ -63,33 +67,113 @@ PARAM_DISCOVERY_TIMEOUT = 5            # Per-request timeout in seconds
 
 # Port Scanning Configuration
 PORT_SCAN_TIMEOUT = 0.8                # Socket timeout per port (seconds)
-PORT_SCAN_THREADS = 30                 # Concurrent threads for port scanning
-COMMON_PORTS = [
-    # ═══ Web Services ═══
-    80, 443, 8080, 8443, 8000, 8888, 8008, 8181, 8888, 9090, 9443,
-    # ═══ Remote Access ═══
-    22, 23, 3389, 5900, 5901,
-    # ═══ Email ═══
-    25, 110, 143, 465, 587, 993, 995,
-    # ═══ File Transfer ═══
-    20, 21, 69, 115, 989, 990,
-    # ═══ Databases ═══
-    1433, 1521, 3306, 5432, 6379, 9200, 9300, 27017, 27018,
-    # ═══ DNS ═══
-    53,
-    # ═══ Directory / Auth ═══
-    88, 389, 636, 445, 139,
-    # ═══ Message Queues ═══
-    5672, 15672, 11211, 61616,
-    # ═══ Monitoring / Admin ═══
-    161, 162, 199, 2049, 5601, 3000, 4443, 7001, 7002, 8090, 10000,
-    # ═══ Proxy / VPN ═══
-    1080, 3128, 8118, 1194,
-    # ═══ Docker / Kubernetes ═══
-    2375, 2376, 6443, 10250, 10255,
-    # ═══ CI/CD / Dev Tools ═══
-    8081, 8082, 9000, 9001, 4200, 5000, 5001,
-]
+PORT_SCAN_THREADS = 74                 # Concurrent threads for port scanning
+COMMON_PORTS_MAP = {
+    # Web Services
+    'http': 80,
+    'https': 443,
+    'http-alt': 8080,
+    'https-alt': 8443,
+    'http-local': 8000,
+    'http-alt2': 8008,
+    'tomcat': 8181,
+    'dev-web': 8888,
+    'jetty': 9090,
+    'https-9443': 9443,
+
+    # Remote Access
+    'ssh': 22,
+    'telnet': 23,
+    'rdp': 3389,
+    'vnc': 5900,
+    'vnc-alt': 5901,
+
+    # Email
+    'smtp': 25,
+    'pop3': 110,
+    'imap': 143,
+    'smtps': 465,
+    'submission': 587,
+    'imaps': 993,
+    'pop3s': 995,
+
+    # File Transfer
+    'ftp-data': 20,
+    'ftp': 21,
+    'tftp': 69,
+    'nfs': 2049,
+    'ftps': 989,
+    'ftps-data': 990,
+
+    # Databases
+    'mssql': 1433,
+    'oracle': 1521,
+    'mysql': 3306,
+    'postgres': 5432,
+    'redis': 6379,
+    'elasticsearch': 9200,
+    'elasticsearch-transport': 9300,
+    'mongodb': 27017,
+    'mongodb-alt': 27018,
+
+    # DNS
+    'dns': 53,
+
+    # Directory / Auth
+    'kerberos': 88,
+    'ldap': 389,
+    'ldaps': 636,
+    'samba': 445,
+    'netbios-ssn': 139,
+
+    # Message Queues
+    'amqp': 5672,
+    'rabbitmq-mgmt': 15672,
+    'memcached': 11211,
+    'activemq': 61616,
+
+    # Monitoring / Admin
+    'snmp': 161,
+    'snmp-trap': 162,
+    'rsync': 873,
+    'nfs-alt': 199,
+    'cassandra': 9042,
+    'kibana': 5601,
+    'grafana': 3000,
+    'node-admin': 4443,
+    'weblogic': 7001,
+    'weblogic-ssl': 7002,
+    'tomcat-admin': 8090,
+    'webmin': 10000,
+
+    # Proxy / VPN
+    'socks': 1080,
+    'squid': 3128,
+    'privoxy': 8118,
+    'openvpn': 1194,
+
+    # Docker / Kubernetes
+    'docker': 2375,
+    'docker-tls': 2376,
+    'k8s-api': 6443,
+    'k8s-kube': 10250,
+    'k8s-proxy': 10255,
+
+    # CI/CD / Dev Tools
+    'sonarqube': 9000,
+    'jenkins': 8081,
+    'jenkins-alt': 8082,
+    'vscode-server': 9001,
+    'react-dev': 4200,
+    'flask': 5000,
+    'flask-alt': 5001,
+}
+
+# Backwards-compatible list of common port numbers
+COMMON_PORTS = list(COMMON_PORTS_MAP.values())
+
+# Map port number -> canonical name for display in reports
+COMMON_PORTS_NUM_TO_NAME = {num: name for name, num in COMMON_PORTS_MAP.items()}
 
 # CORS Reference
 CORS_UNSAFE_PATTERNS = {
