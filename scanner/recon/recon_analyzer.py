@@ -173,7 +173,8 @@ class ReconAnalyzer:
         # If too many ports appear open, likely false positive (firewall/honeypot)
         if len(open_ports) > 25:
             logger.warning(f"Unusual: {len(open_ports)} ports detected as open - possible false positive")
-            open_ports = [p for p in open_ports if p in [80, 443, 8080, 8443, 22, 21, 25, 53, 3306, 5432]]
+            # Narrow down to commonly important ports to reduce noise
+            open_ports = [p for p in open_ports if p in COMMON_PORTS]
 
         open_ports.sort()
         logger.info(f"Port scan complete: {len(open_ports)} open ports found")
