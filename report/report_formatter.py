@@ -8,6 +8,7 @@ import json
 from config import SEVERITY_LEVELS, TOOL_NAME, TOOL_VERSION, COMMON_PORTS_NUM_TO_NAME
 from ui.colors import RED, YELLOW, GREEN, CYAN, RESET, BLUE
 import io
+import html
 
 # PDF generation
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak
@@ -15,6 +16,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
+
 
 class ReportFormatter:
     """Formats scan results for various output formats."""
@@ -27,6 +29,13 @@ class ReportFormatter:
             scan_result: ScanResult object to format
         """
         self.result = scan_result
+    
+    @staticmethod
+    def _safe(text: str) -> str:
+        """Escape text so ReportLab Paragraph doesn't parse it as markup."""
+        if not text:
+            return text or ''
+        return html.escape(str(text), quote=True)
     
     def format_cli_output(self) -> str:
         """
@@ -549,7 +558,6 @@ class ReportFormatter:
         h2 = styles['Heading2']
         h3 = styles['Heading3']
 
-        # Color palette matching HTML
         colors_map = {
             'critical': colors.HexColor('#8B0000'),
             'high': colors.HexColor('#e74c3c'),
@@ -562,19 +570,29 @@ class ReportFormatter:
 
         story = []
 
-        # Header
+        # ─── Header ───
         story.append(Paragraph('🛡️ Safe Web Vulnerability Scan Report', h1))
         story.append(Spacer(1, 6))
 
-        # Metadata grid (two-column table)
-        timestamp = self.result.timestamp.isoformat() if hasattr(self.result.timestamp, 'isoformat') else str(self.result.timestamp)
-        # distribute widths across the available doc.width
+        # ─── Metadata ───
+        timestamp = (self.result.timestamp.isoformat()
+                     if hasattr(self.result.timestamp, 'isoformat')
+                     else str(self.result.timestamp))
         remaining = doc.width - (30*mm + 30*mm)
         half = remaining / 2.0
+
         meta_table = Table([
-            [Paragraph('Tool', normal), Paragraph(f"{TOOL_NAME} v{TOOL_VERSION}", normal), '', ''],
-            [Paragraph('Session ID', normal), Paragraph(self.result.session_id or 'N/A', normal), Paragraph('Target', normal), Paragraph(self.result.target_url or 'N/A', normal)],
-            [Paragraph('Date', normal), Paragraph(timestamp, normal), Paragraph('HTTPS', normal), Paragraph('Enabled' if self.result.https_enabled else 'Disabled', normal)]
+            [Paragraph('Tool', normal),
+             Paragraph(self._safe(f"{TOOL_NAME} v{TOOL_VERSION}"), normal),
+             '', ''],
+            [Paragraph('Session ID', normal),
+             Paragraph(self._safe(self.result.session_id or 'N/A'), normal),
+             Paragraph('Target', normal),
+             Paragraph(self._safe(self.result.target_url or 'N/A'), normal)],
+            [Paragraph('Date', normal),
+             Paragraph(self._safe(timestamp), normal),
+             Paragraph('HTTPS', normal),
+             Paragraph('Enabled' if self.result.https_enabled else 'Disabled', normal)]
         ], colWidths=[30*mm, half, 30*mm, half])
         meta_table.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), colors.white),
@@ -586,18 +604,27 @@ class ReportFormatter:
         story.append(meta_table)
         story.append(Spacer(1, 10))
 
-        # Recon section (reuse HTML structure)
+        # ─── Recon ───
         if self.result.recon:
             r = self.result.recon
             story.append(Paragraph('🕵️ Reconnaissance (Intelligence)', h2))
-            story.append(Spacer(1,6))
+            story.append(Spacer(1, 6))
 
             recon_rows = []
-            recon_rows.append([Paragraph('IP Address', normal), Paragraph(getattr(r, 'ip_address', 'N/A'), normal)])
+            recon_rows.append([
+                Paragraph('IP Address', normal),
+                Paragraph(self._safe(getattr(r, 'ip_address', 'N/A')), normal)
+            ])
             if getattr(r, 'server_os', None):
-                recon_rows.append([Paragraph('Server OS', normal), Paragraph(r.server_os, normal)])
+                recon_rows.append([
+                    Paragraph('Server OS', normal),
+                    Paragraph(self._safe(r.server_os), normal)
+                ])
             if getattr(r, 'technologies', None):
-                recon_rows.append([Paragraph('Technologies', normal), Paragraph(', '.join(r.technologies), normal)])
+                recon_rows.append([
+                    Paragraph('Technologies', normal),
+                    Paragraph(self._safe(', '.join(r.technologies)), normal)
+                ])
             if getattr(r, 'open_ports', None):
                 ports_list = []
                 for p in r.open_ports:
@@ -606,19 +633,41 @@ class ReportFormatter:
                 ports = ', '.join(ports_list)
             else:
                 ports = 'None Detected'
-            recon_rows.append([Paragraph('Open Ports', normal), Paragraph(ports, normal)])
+            recon_rows.append([
+                Paragraph('Open Ports', normal),
+                Paragraph(self._safe(ports), normal)
+            ])
 
             if getattr(r, 'domain_info', None) and 'error' not in r.domain_info:
                 di = r.domain_info
-                recon_rows.append([Paragraph('Registrar', normal), Paragraph(di.get('registrar', 'N/A'), normal)])
-                recon_rows.append([Paragraph('Organization', normal), Paragraph(f"{di.get('org', 'N/A')} ({di.get('country','N/A')})", normal)])
+                recon_rows.append([
+                    Paragraph('Registrar', normal),
+                    Paragraph(self._safe(di.get('registrar', 'N/A')), normal)
+                ])
+                recon_rows.append([
+                    Paragraph('Organization', normal),
+                    Paragraph(self._safe(
+                        f"{di.get('org', 'N/A')} ({di.get('country','N/A')})"
+                    ), normal)
+                ])
             if getattr(r, 'dns_security', None):
                 dns = r.dns_security
-                recon_rows.append([Paragraph('Email Security', normal), Paragraph('Vulnerable' if dns.get('vulnerable') else 'Secure', normal)])
-                recon_rows.append([Paragraph('SPF', normal), Paragraph(dns.get('spf') or 'Missing', normal)])
-                recon_rows.append([Paragraph('DMARC', normal), Paragraph(dns.get('dmarc') or 'Missing', normal)])
+                recon_rows.append([
+                    Paragraph('Email Security', normal),
+                    Paragraph('Vulnerable' if dns.get('vulnerable') else 'Secure', normal)
+                ])
+                recon_rows.append([
+                    Paragraph('SPF', normal),
+                    Paragraph(self._safe(dns.get('spf') or 'Missing'), normal)
+                ])
+                recon_rows.append([
+                    Paragraph('DMARC', normal),
+                    Paragraph(self._safe(dns.get('dmarc') or 'Missing'), normal)
+                ])
 
-            recon_table = Table(recon_rows, colWidths=[40*mm, doc.width - 40*mm], hAlign='LEFT')
+            recon_table = Table(recon_rows,
+                                colWidths=[40*mm, doc.width - 40*mm],
+                                hAlign='LEFT')
             recon_table.setStyle(TableStyle([
                 ('BOX', (0,0), (-1,-1), 0.5, colors.grey),
                 ('INNERGRID', (0,0), (-1,-1), 0.25, colors.grey),
@@ -628,9 +677,9 @@ class ReportFormatter:
             story.append(recon_table)
             story.append(Spacer(1, 10))
 
-        # Executive Summary boxes similar to HTML colored stat boxes
+        # ─── Executive Summary ───
         story.append(Paragraph('📊 Executive Summary', h2))
-        story.append(Spacer(1,6))
+        story.append(Spacer(1, 6))
         summary = self.result.summary()
 
         stats_data = [[
@@ -641,11 +690,15 @@ class ReportFormatter:
             Paragraph(str(summary.get('info', 0)), styles['Heading3']),
             Paragraph(str(summary.get('total', 0)), styles['Heading3'])
         ],[
-            Paragraph('CRITICAL', normal), Paragraph('HIGH', normal), Paragraph('MEDIUM', normal), Paragraph('LOW', normal), Paragraph('INFO', normal), Paragraph('TOTAL', normal)
+            Paragraph('CRITICAL', normal),
+            Paragraph('HIGH', normal),
+            Paragraph('MEDIUM', normal),
+            Paragraph('LOW', normal),
+            Paragraph('INFO', normal),
+            Paragraph('TOTAL', normal)
         ]]
 
         stats_table = Table(stats_data, colWidths=[(doc.width/6.0)]*6)
-        # Apply background colors per first row cell
         stats_style = TableStyle([
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -663,20 +716,31 @@ class ReportFormatter:
         story.append(stats_table)
         story.append(Spacer(1, 12))
 
-        # Detailed Findings with colored headers
+        # ─── Detailed Findings ───  ← هنا المشكلة الأساسية كانت
         story.append(Paragraph('🔍 Detailed Findings', h2))
-        story.append(Spacer(1,6))
+        story.append(Spacer(1, 6))
 
         if self.result.findings:
-            severity_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFO': 4}
-            sorted_findings = sorted(self.result.findings, key=lambda f: severity_order.get(f.severity, 99))
+            severity_order = {
+                'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFO': 4
+            }
+            sorted_findings = sorted(
+                self.result.findings,
+                key=lambda f: severity_order.get(f.severity, 99)
+            )
 
             for finding in sorted_findings:
-                sev_key = finding.severity.lower() if finding.severity else 'low'
+                sev_key = (finding.severity.lower()
+                           if finding.severity else 'low')
                 header_bg = colors_map.get(sev_key, colors_map['low'])
 
-                # header row
-                header = Table([[Paragraph(f"[{finding.severity}] {finding.title}", styles['Heading4'])]], colWidths=[doc.width])
+                # ══ العنوان - مع escape ══
+                header = Table([[
+                    Paragraph(
+                        self._safe(f"[{finding.severity}] {finding.title}"),
+                        styles['Heading4']
+                    )
+                ]], colWidths=[doc.width])
                 header.setStyle(TableStyle([
                     ('BACKGROUND', (0,0), (-1,-1), header_bg),
                     ('TEXTCOLOR', (0,0), (-1,-1), colors.white),
@@ -684,18 +748,43 @@ class ReportFormatter:
                     ('RIGHTPADDING', (0,0), (-1,-1), 6),
                 ]))
 
-                # body rows with Paragraphs to ensure wrapping
+                # ══ التفاصيل - كل حقل مع escape ══
                 body_rows = []
-                body_rows.append([Paragraph('Location', normal), Paragraph(finding.location or 'N/A', normal)])
-                body_rows.append([Paragraph('Severity', normal), Paragraph(finding.severity or 'N/A', normal)])
-                body_rows.append([Paragraph('Confidence', normal), Paragraph(str(getattr(finding, 'confidence', 'N/A')), normal)])
-                body_rows.append([Paragraph('Description', normal), Paragraph(finding.description or '', normal)])
+                body_rows.append([
+                    Paragraph('Location', normal),
+                    Paragraph(self._safe(finding.location or 'N/A'), normal)
+                ])
+                body_rows.append([
+                    Paragraph('Severity', normal),
+                    Paragraph(self._safe(finding.severity or 'N/A'), normal)
+                ])
+                body_rows.append([
+                    Paragraph('Confidence', normal),
+                    Paragraph(self._safe(
+                        str(getattr(finding, 'confidence', 'N/A'))
+                    ), normal)
+                ])
+                body_rows.append([
+                    Paragraph('Description', normal),
+                    Paragraph(self._safe(finding.description or ''), normal)
+                ])
                 if finding.recommendation:
-                    body_rows.append([Paragraph('Recommendation', normal), Paragraph(finding.recommendation, normal)])
+                    body_rows.append([
+                        Paragraph('Recommendation', normal),
+                        Paragraph(
+                            self._safe(finding.recommendation), normal
+                        )
+                    ])
                 if finding.cwe_reference:
-                    body_rows.append([Paragraph('Reference', normal), Paragraph(finding.cwe_reference, normal)])
+                    body_rows.append([
+                        Paragraph('Reference', normal),
+                        Paragraph(
+                            self._safe(finding.cwe_reference), normal
+                        )
+                    ])
 
-                body_table = Table(body_rows, colWidths=[35*mm, doc.width - 35*mm])
+                body_table = Table(body_rows,
+                                   colWidths=[35*mm, doc.width - 35*mm])
                 body_table.setStyle(TableStyle([
                     ('BOX', (0,0), (-1,-1), 0.25, colors.grey),
                     ('INNERGRID', (0,0), (-1,-1), 0.2, colors.lightgrey),
@@ -705,14 +794,17 @@ class ReportFormatter:
                     ('RIGHTPADDING', (0,0), (-1,-1), 4),
                 ]))
 
-                # keep header and its body together to avoid splitting awkwardly
                 story.append(KeepTogether([header, body_table, Spacer(1,8)]))
         else:
-            story.append(Paragraph('✅ Excellent! No security issues found.', normal))
+            story.append(
+                Paragraph('✅ Excellent! No security issues found.', normal)
+            )
 
-        # Footer
+        # ─── Footer ───
         story.append(Spacer(1, 12))
-        story.append(Paragraph('Generated by Safe Web Vulnerability Checker', normal))
+        story.append(Paragraph(
+            'Generated by Safe Web Vulnerability Checker', normal
+        ))
 
         doc.build(story)
         pdf_bytes = buffer.getvalue()
